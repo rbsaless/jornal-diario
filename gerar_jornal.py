@@ -10,6 +10,7 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(RAIZ, "fontes.json"), encoding="utf-8"))
 OPC = CFG["configuracoes"]
 MODELOS = [m for m in [os.environ.get("GEMINI_MODEL"), "gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.6-flash"] if m]
+MODELO = os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest")
 UA = {"User-Agent": "Mozilla/5.0 (compatible; JornalDiario/1.0)"}
 DIAS = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
 MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto",
