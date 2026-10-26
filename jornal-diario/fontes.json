@@ -1,0 +1,13 @@
+{
+  "configuracoes": {
+    "titulo": "O Jornal da Manhã",
+    "total_itens": 24,
+    "horas_recentes": 36,
+    "itens_por_fonte": 30
+  },
+  "fontes": [
+    { "nome": "CNN Brasil", "url": "https://www.cnnbrasil.com.br/feed/" },
+    { "nome": "ge", "url": "https://pox.globo.com/rss/ge/", "plano_b": "https://ge.globo.com/" },
+    { "nome": "Fox News", "url": "https://moxie.foxnews.com/google-publisher/latest.xml" }
+  ]
+}
