@@ -208,11 +208,19 @@ def main():
     for n, it in enumerate(coletados):
         it["id"] = n
     por_id, usados, finais = {i["id"]: i for i in coletados}, set(), []
-    for e in gemini(prompt(coletados, OPC["total_itens"])):
-        base = por_id.get(e.get("id"))
+    escolhidos = gemini(prompt(coletados, OPC["total_itens"]))
+    print(f"Gemini devolveu {len(escolhidos)} itens. Exemplo: {str(escolhidos[:1])[:300]}")
+    for e in escolhidos:
+        try:
+            base = por_id.get(int(re.sub(r"\D", "", str(e.get("id")))))
+        except ValueError:
+            base = None
         if base and base["id"] not in usados:
             usados.add(base["id"])
-            finais.append({**base, "titulo": e["titulo"], "resumo": e["resumo"], "secao": e.get("secao", "Outros")})
+            finais.append({**base, "titulo": e.get("titulo") or base["titulo"],
+                           "resumo": e.get("resumo") or base["resumo"],
+                           "secao": e.get("secao", "Outros")})
+         
     if len(finais) < 5:
         sys.exit("O Gemini devolveu itens de menos; a edição anterior continua no ar.")
     for it in finais:
