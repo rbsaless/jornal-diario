@@ -36,4 +36,4 @@ jobs:
         run: |
           curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d text="Seu jornal de hoje está pronto: https://SEU-USUARIO.github.io/jornal-diario/"
+            -d text="Seu jornal de hoje está pronto: https://rbsaless.github.io/jornal-diario/"
