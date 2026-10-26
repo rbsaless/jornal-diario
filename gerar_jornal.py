@@ -119,7 +119,7 @@ def gemini(texto):
     req = urllib.request.Request(
         f"https://generativelanguage.googleapis.com/v1beta/models/{MODELO}:generateContent",
         data=json.dumps(corpo).encode(),
-        headers={"Content-Type": "application/json", "x-goog-api-key": os.environ["GEMINI_API_KEY"]})
+        headers={"Content-Type": "application/json", "x-goog-api-key": os.environ["GEMINI_API_KEY"].strip()})
     for tentativa in range(4):
         try:
             with urllib.request.urlopen(req, timeout=120) as r:
