@@ -2,7 +2,7 @@ name: Jornal diário
 
 on:
   schedule:
-    - cron: "54 23 * * *"   # 08:30 UTC = 05:30 em Brasília
+    - cron: "57 23 * * *"   # 08:30 UTC = 05:30 em Brasília
   workflow_dispatch:        # botão "Run workflow" para testar na hora
 
 permissions:
