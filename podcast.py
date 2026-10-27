@@ -47,7 +47,8 @@ def roteiro(itens):
     pedido = ("Write a casual two-host news podcast script in English, about 800 words (5-6 minutes). "
               "Hosts: Alex and Sam. Short sentences, natural reactions, light banter, no emojis. "
               "Cover the stories below, grouping related ones; stay faithful to the facts, invent nothing. "
-              "Open with a quick greeting and close with a short sign-off. "
+              "Alex must open with exactly this sentence: 'This is The Morning Paper report.' "
+              "Then go straight into the stories, with no other greeting or small talk. Close with a short sign-off. "
               "Format STRICTLY as lines starting with 'Alex:' or 'Sam:' and nothing else.\n\nSTORIES:\n"
               + "\n".join(itens))
     for m in MODELOS_TEXTO:
