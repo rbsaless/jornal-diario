@@ -1,95 +1,96 @@
 {
   "configuracoes": {
-    "titulo": "O Jornal da Manhã",
+    "titulo": "The Morning Paper",
     "total_itens": 30,
     "horas_recentes": 36,
-    "itens_por_fonte": 12,
-    "orientacao_editorial": "Notícias do Brasil têm prioridade na manchete e no topo. Distribua os 30 itens aproximadamente assim: Coreias (Coreia do Norte e do Sul) cerca de 4; Espaço e Ciência cerca de 3; Tecnologia e inteligência artificial cerca de 3; Esporte cerca de 3; Vídeo cerca de 2; o restante em política, mundo e economia. Da Al Jazeera, dê preferência a Oriente Médio, África e Ásia."
+    "itens_por_fonte": 15,
+    "orientacao_editorial": "No country or source has priority. Rank stories by global significance and impact, and give a higher rank to events reported by several different sources. The first item is simply the most significant story of the last 24 hours. Spread the 30 front-page items roughly like this: Koreas (North and South Korea) about 4; Space and Science about 3; Technology and artificial intelligence about 3; Sports about 3; Video about 2; the rest in politics, world and economy. From Al Jazeera, prefer the Middle East, Africa and Asia.",
+    "total_abas": 80
   },
   "fontes": [
     {
       "nome": "CNN Brasil",
       "url": "https://www.cnnbrasil.com.br/feed/",
-      "max": 15
+      "max": 20
     },
     {
       "nome": "ge",
       "url": "https://pox.globo.com/rss/ge/",
       "plano_b": "https://ge.globo.com/",
-      "max": 10
+      "max": 13
     },
     {
       "nome": "Fox News",
       "url": "https://moxie.foxnews.com/google-publisher/latest.xml",
-      "max": 12
+      "max": 16
     },
     {
       "nome": "Reuters",
       "url": "https://news.google.com/rss/search?q=when:24h+site:reuters.com&hl=en-US&gl=US&ceid=US:en",
-      "max": 15
+      "max": 20
     },
     {
       "nome": "Reuters",
       "url": "https://news.google.com/rss/search?q=when:24h+site:reuters.com+%22artificial+intelligence%22&hl=en-US&gl=US&ceid=US:en",
-      "max": 8
+      "max": 10
     },
     {
       "nome": "Al Jazeera",
       "url": "https://www.aljazeera.com/xml/rss/all.xml",
-      "max": 20
+      "max": 26
     },
     {
       "nome": "Space.com",
       "url": "https://www.space.com/feeds.xml",
-      "max": 10
+      "max": 13
     },
     {
       "nome": "NASA",
       "url": "https://www.nasa.gov/feed/",
-      "max": 8
+      "max": 10
     },
     {
       "nome": "NASA Science",
       "url": "https://science.nasa.gov/feed/",
-      "max": 8
+      "max": 10
     },
     {
       "nome": "Wired",
       "url": "https://www.wired.com/feed/rss",
-      "max": 10
+      "max": 13
     },
     {
       "nome": "AI News",
       "url": "https://www.artificialintelligence-news.com/feed/rss/",
-      "max": 8
+      "max": 10
     },
     {
       "nome": "38 North",
       "url": "https://www.38north.org/feed/",
       "plano_b": "https://www.38north.org/",
-      "max": 8
+      "max": 10
     },
     {
       "nome": "NK News",
       "url": "https://www.nknews.org/feed/",
       "plano_b": "https://www.nknews.org/",
-      "max": 10
+      "max": 13
     },
     {
       "nome": "Korea Herald",
       "url": "https://www.koreaherald.com/rss/newsAll",
-      "max": 10
+      "max": 13
     },
     {
       "nome": "Korea Times",
       "url": "https://www.koreatimes.co.kr/www/rss/nation.xml",
       "plano_b": "https://www.koreatimes.co.kr/latest",
-      "max": 10
+      "max": 13
     },
     {
       "nome": "Yonhap",
       "url": "https://en.yna.co.kr/RSS/news.xml",
-      "max": 10
+      "max": 13
     },
     {
       "nome": "What About It?",
