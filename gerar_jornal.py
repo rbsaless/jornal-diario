@@ -52,9 +52,9 @@ def imagem_do_item(el, blob):
     return html.unescape(m.group(1)) if m else ""
 
 
-def ler_feed(fonte):
-    raiz = ET.fromstring(baixar(fonte["url"]))
-    limite = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=OPC["horas_recentes"])
+def ler_feed(fonte, url=None):
+    raiz = ET.fromstring(baixar(url or fonte["url"]))
+    limite = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=fonte.get("horas", OPC["horas_recentes"]))
     itens = []
     for el in raiz.iter():
         if ln(el.tag) not in ("item", "entry"):
@@ -64,14 +64,25 @@ def ler_feed(fonte):
             d.setdefault(ln(c.tag), c)
         txt = lambda k: (d[k].text or "") if k in d else ""
         link = (d["link"].get("href") or d["link"].text or "").strip() if "link" in d else ""
-        blob = txt("encoded") + txt("description") + txt("summary") + txt("content")
+        blob = txt("encoded") + (txt("description") or next((c.text for c in el.iter() if ln(c.tag) == "description" and c.text), "")) + txt("summary") + txt("content")
         quando = next((data(txt(k)) for k in ("pubDate", "published", "updated", "date") if txt(k)), None)
         if not link or (quando and quando < limite):
             continue
         itens.append({"fonte": fonte["nome"], "titulo": limpar(txt("title"), 200), "link": link,
-                      "resumo": limpar(blob, 400), "imagem": imagem_do_item(el, blob), "quando": quando})
+                      "resumo": limpar(blob, 400), "video": bool(fonte.get("youtube")), "imagem": imagem_do_item(el, blob), "quando": quando})
     itens.sort(key=lambda i: i["quando"] or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc), reverse=True)
-    return itens[:OPC["itens_por_fonte"]]
+    return itens[:fonte.get("max", OPC["itens_por_fonte"])]
+
+
+def ler_youtube(fonte):
+    canal = fonte.get("canal_id")
+    if not canal:
+        h = baixar(f"https://www.youtube.com/{fonte['youtube']}", 2000000).decode("utf-8", "replace")
+        m = re.search(r"channel_id=(UC[\w-]{22})", h) or re.search(r'"(?:channelId|externalId)":"(UC[\w-]{22})"', h)
+        if not m:
+            raise ValueError('não achei o canal; coloque "canal_id" no fontes.json')
+        canal = m.group(1)
+    return ler_feed(fonte, f"https://www.youtube.com/feeds/videos.xml?channel_id={canal}")
 
 
 def ler_pagina(fonte):
@@ -85,10 +96,12 @@ def ler_pagina(fonte):
             continue
         vistos.add(link)
         itens.append({"fonte": fonte["nome"], "titulo": titulo, "link": link, "resumo": "", "imagem": "", "quando": None})
-    return itens[:OPC["itens_por_fonte"]]
+    return itens[:fonte.get("max", OPC["itens_por_fonte"])]
 
 
 def og_image(link):
+    if "news.google.com" in link:
+        return ""
     try:
         h = baixar(link, 250000, 10).decode("utf-8", "replace")
     except Exception:
@@ -101,16 +114,23 @@ def og_image(link):
     return ""
 
 
+SECOES_VALIDAS = "Brasil, Política, Mundo, Economia, Esporte, Tecnologia, Ciência, Espaço, Coreias, Vídeo, Saúde, Cultura, Outros"
+
+
 def prompt(itens, n):
-    linhas = "\n".join(f'[{i["id"]}] ({i["fonte"]}) {i["titulo"]} :: {i["resumo"][:300]}' for i in itens)
-    return f"""Você é o editor-chefe de um jornal diário em português do Brasil. Abaixo estão {len(itens)} notícias coletadas de várias fontes (algumas em inglês).
-Escolha as {n} mais importantes e relevantes. Elimine duplicatas (o mesmo fato em fontes diferentes: fique com uma), corte ruído, sensacionalismo e trivialidades, e equilibre os assuntos (política, mundo, economia, esporte, tecnologia etc.), sem deixar uma única fonte dominar.
-Ordene da mais para a menos importante: a primeira é a manchete.
-Escreva TUDO em português do Brasil, fiel ao texto original, sem inventar fatos.
-Para cada notícia escolhida devolva: id (o número entre colchetes), titulo (manchete clara, até 90 caracteres), resumo (2 frases; para a primeira, 4 frases), secao (Brasil, Política, Mundo, Economia, Esporte, Tecnologia, Saúde, Cultura ou Outros).
+    orient = OPC.get("orientacao_editorial", "")
+    linhas = "\n".join(
+        f'[{i["id"]}] ({i["fonte"]}{", VÍDEO" if i.get("video") else ""}) {i["titulo"]} :: {i["resumo"][:220]}'
+        for i in itens)
+    return f"""Você é o editor-chefe de um jornal diário em português do Brasil. Abaixo estão {len(itens)} itens coletados de várias fontes (a maioria em inglês).
+Escolha os {n} mais importantes e relevantes. Elimine duplicatas (o mesmo fato em fontes diferentes: fique com um só), corte ruído, sensacionalismo e trivialidades, e equilibre os assuntos sem deixar uma única fonte dominar.
+Orientação do dono do jornal: {orient}
+Ordene do mais para o menos importante: o primeiro é a manchete.
+Escreva TUDO em português do Brasil, fiel ao texto original, sem inventar fatos. Itens marcados VÍDEO são vídeos do YouTube: use a seção Vídeo e diga do que o vídeo trata.
+Para cada item escolhido devolva: id (o número entre colchetes), titulo (até 90 caracteres), resumo (2 frases; para o primeiro, 4 frases), secao (exatamente uma destas: {SECOES_VALIDAS}).
 Responda SOMENTE com JSON: {{"itens":[{{"id":0,"titulo":"...","resumo":"...","secao":"..."}}]}}
 
-NOTÍCIAS:
+ITENS:
 {linhas}"""
 
 
@@ -144,7 +164,8 @@ def gemini(texto):
 
 
 SECOES = {"politica": "#1D4ED8", "mundo": "#0F766E", "economia": "#15803D", "esporte": "#C2410C",
-          "tecnologia": "#6D28D9", "saude": "#BE185D", "brasil": "#A16207", "cultura": "#7E22CE"}
+          "tecnologia": "#6D28D9", "saude": "#BE185D", "brasil": "#A16207", "cultura": "#7E22CE",
+          "ciencia": "#0E7490", "espaco": "#3730A3", "coreias": "#A21CAF", "video": "#B91C1C"}
 SANS = '"Libre Franklin",system-ui,-apple-system,"Segoe UI",sans-serif'
 
 CSS = """
@@ -246,7 +267,7 @@ def main():
     for f in CFG["fontes"]:
         itens = []
         try:
-            itens = ler_feed(f)
+            itens = ler_youtube(f) if f.get("youtube") else ler_feed(f)
         except Exception as e:
             print(f"[aviso] feed de {f['nome']} falhou: {e}")
         if len(itens) < 3 and f.get("plano_b"):
