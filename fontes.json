@@ -1,13 +1,113 @@
 {
   "configuracoes": {
     "titulo": "O Jornal da Manhã",
-    "total_itens": 24,
+    "total_itens": 30,
     "horas_recentes": 36,
-    "itens_por_fonte": 30
+    "itens_por_fonte": 12,
+    "orientacao_editorial": "Notícias do Brasil têm prioridade na manchete e no topo. Distribua os 30 itens aproximadamente assim: Coreias (Coreia do Norte e do Sul) cerca de 4; Espaço e Ciência cerca de 3; Tecnologia e inteligência artificial cerca de 3; Esporte cerca de 3; Vídeo cerca de 2; o restante em política, mundo e economia. Da Al Jazeera, dê preferência a Oriente Médio, África e Ásia."
   },
   "fontes": [
-    { "nome": "CNN Brasil", "url": "https://www.cnnbrasil.com.br/feed/" },
-    { "nome": "ge", "url": "https://pox.globo.com/rss/ge/", "plano_b": "https://ge.globo.com/" },
-    { "nome": "Fox News", "url": "https://moxie.foxnews.com/google-publisher/latest.xml" }
+    {
+      "nome": "CNN Brasil",
+      "url": "https://www.cnnbrasil.com.br/feed/",
+      "max": 15
+    },
+    {
+      "nome": "ge",
+      "url": "https://pox.globo.com/rss/ge/",
+      "plano_b": "https://ge.globo.com/",
+      "max": 10
+    },
+    {
+      "nome": "Fox News",
+      "url": "https://moxie.foxnews.com/google-publisher/latest.xml",
+      "max": 12
+    },
+    {
+      "nome": "Reuters",
+      "url": "https://news.google.com/rss/search?q=when:24h+site:reuters.com&hl=en-US&gl=US&ceid=US:en",
+      "max": 15
+    },
+    {
+      "nome": "Reuters",
+      "url": "https://news.google.com/rss/search?q=when:24h+site:reuters.com+%22artificial+intelligence%22&hl=en-US&gl=US&ceid=US:en",
+      "max": 8
+    },
+    {
+      "nome": "Al Jazeera",
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "max": 20
+    },
+    {
+      "nome": "Space.com",
+      "url": "https://www.space.com/feeds.xml",
+      "max": 10
+    },
+    {
+      "nome": "NASA",
+      "url": "https://www.nasa.gov/feed/",
+      "max": 8
+    },
+    {
+      "nome": "NASA Science",
+      "url": "https://science.nasa.gov/feed/",
+      "max": 8
+    },
+    {
+      "nome": "Wired",
+      "url": "https://www.wired.com/feed/rss",
+      "max": 10
+    },
+    {
+      "nome": "AI News",
+      "url": "https://www.artificialintelligence-news.com/feed/rss/",
+      "max": 8
+    },
+    {
+      "nome": "38 North",
+      "url": "https://www.38north.org/feed/",
+      "plano_b": "https://www.38north.org/",
+      "max": 8
+    },
+    {
+      "nome": "NK News",
+      "url": "https://www.nknews.org/feed/",
+      "plano_b": "https://www.nknews.org/",
+      "max": 10
+    },
+    {
+      "nome": "Korea Herald",
+      "url": "https://www.koreaherald.com/rss/newsAll",
+      "max": 10
+    },
+    {
+      "nome": "Korea Times",
+      "url": "https://www.koreatimes.co.kr/www/rss/nation.xml",
+      "plano_b": "https://www.koreatimes.co.kr/latest",
+      "max": 10
+    },
+    {
+      "nome": "Yonhap",
+      "url": "https://en.yna.co.kr/RSS/news.xml",
+      "max": 10
+    },
+    {
+      "nome": "What About It?",
+      "youtube": "@Whataboutit",
+      "horas": 120,
+      "max": 3
+    },
+    {
+      "nome": "Everyday Astronaut",
+      "youtube": "@EverydayAstronaut",
+      "horas": 120,
+      "max": 3
+    },
+    {
+      "nome": "SpaceX",
+      "youtube": "@SpaceX",
+      "horas": 120,
+      "max": 3
+    }
   ]
 }
