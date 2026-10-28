@@ -69,7 +69,7 @@ def ler_feed(fonte, url=None):
         if not link or (quando and quando < limite):
             continue
         itens.append({"fonte": fonte["nome"], "titulo": limpar(txt("title"), 200), "link": link,
-                      "resumo": limpar(blob, 400), "video": bool(fonte.get("youtube")), "imagem": imagem_do_item(el, blob), "quando": quando})
+                      "resumo": limpar(blob, 400), "texto": limpar(blob, 1600), "video": bool(fonte.get("youtube")), "imagem": imagem_do_item(el, blob), "quando": quando})
     itens.sort(key=lambda i: i["quando"] or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc), reverse=True)
     return itens[:fonte.get("max", OPC["itens_por_fonte"])]
 
@@ -163,6 +163,21 @@ def gemini(texto):
     raise RuntimeError("Nenhum modelo do Gemini respondeu; veja os avisos acima.")
 
 
+def prompt_detalhe(itens):
+    linhas = "\n".join(f'[{i["id"]}] ({i["fonte"]}) {i["titulo"]} :: {i.get("texto") or i["resumo"]}' for i in itens)
+    return f"""You are a newspaper editor. For each story below, write "detalhe": a clear reading-page text of 90 to 140 words in English, as 2 short paragraphs separated by a blank line.
+Use ONLY facts that appear in the provided text (translate Portuguese). Do not repeat the headline word for word. If the text is short, write fewer words instead of inventing anything. For videos, say what the video covers.
+Reply ONLY with JSON: {{"itens":[{{"id":0,"detalhe":"..."}}]}}
+
+STORIES:
+{linhas}"""
+
+
+def video_id(it):
+    m = re.search(r"(?:[?&]v=|youtu\.be/|/shorts/)([\w-]{11})", it.get("link", "")) if it.get("video") else None
+    return m.group(1) if m else ""
+
+
 ORDEM = ["Brazil", "Politics", "World", "Economy", "Sports", "Technology", "Science", "Space", "Koreas",
          "Video", "Health", "Culture", "Other"]
 ALIAS = {"brasil": "Brazil", "politica": "Politics", "mundo": "World", "economia": "Economy", "esporte": "Sports",
@@ -182,11 +197,11 @@ CSS = """
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){@@DARK@@}}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--fundo);color:var(--tinta);font:17px/1.6 "Source Serif 4",Georgia,serif;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--fundo);color:var(--tinta);font:18px/1.65 "Source Serif 4",Georgia,serif;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 a:focus-visible,button:focus-visible{outline:3px solid var(--alerta);outline-offset:2px}
 .topo{background:linear-gradient(135deg,var(--marca),var(--marca2));color:#fff;border-bottom:4px solid var(--alerta)}
-.faixa{max-width:1200px;margin:0 auto;padding:24px 20px;display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;justify-content:space-between}
+.faixa{max-width:1480px;margin:0 auto;padding:26px clamp(18px,3vw,44px);display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;justify-content:space-between}
 h1{font:800 clamp(1.9rem,5vw,3rem)/1 SANS;letter-spacing:-.03em;margin:0}
 .data{display:block;margin-top:8px;color:#B9C4D6;font:500 .95rem SANS}
 .metas{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font:600 .85rem SANS}
@@ -195,7 +210,7 @@ h1{font:800 clamp(1.9rem,5vw,3rem)/1 SANS;letter-spacing:-.03em;margin:0}
 .tema:hover{background:rgba(255,255,255,.14)}
 .abas{position:sticky;top:0;z-index:20;background:var(--fundo);border-bottom:1px solid var(--linha)}
 @supports(backdrop-filter:blur(8px)){.abas{background:color-mix(in srgb,var(--fundo) 86%,transparent);backdrop-filter:blur(10px)}}
-.abas-in{position:relative;max-width:1200px;margin:0 auto;display:flex;gap:8px;overflow-x:auto;padding:10px 20px;scrollbar-width:none}
+.abas-in{position:relative;max-width:1480px;margin:0 auto;display:flex;gap:8px;overflow-x:auto;padding:10px clamp(18px,3vw,44px);scrollbar-width:none}
 .abas-in::-webkit-scrollbar{display:none}
 .aba{flex:none;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--linha);background:var(--cartao);color:var(--tinta);font:600 .9rem SANS;padding:8px 14px;border-radius:99px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
 .aba:hover{border-color:var(--cor)}
@@ -204,50 +219,79 @@ h1{font:800 clamp(1.9rem,5vw,3rem)/1 SANS;letter-spacing:-.03em;margin:0}
 .aba[aria-selected="true"] .ponto{background:#fff}
 .n{font-size:.8rem;font-weight:700;opacity:.6}
 .no-js .abas{display:none}
-main{max-width:1200px;margin:0 auto;padding:26px 20px 44px}
+main{max-width:1480px;margin:0 auto;padding:36px clamp(18px,3vw,44px) 60px}
 .painel{animation:entra .25s ease}
 @keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.destaque{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;margin-bottom:38px}
-.hero{position:relative;min-height:470px;border-radius:18px;overflow:hidden;color:#fff;display:flex;align-items:flex-end;background:linear-gradient(135deg,var(--cor),#0B1F3A);box-shadow:var(--alta)}
+.destaque{display:grid;grid-template-columns:1.8fr 1fr;gap:30px;margin-bottom:60px}
+.hero{position:relative;min-height:600px;border-radius:18px;overflow:hidden;color:#fff;display:flex;align-items:flex-end;background:linear-gradient(135deg,var(--cor),#0B1F3A);box-shadow:var(--alta)}
 .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.93) 0%,rgba(6,12,24,.55) 45%,rgba(6,12,24,0) 78%)}
-.hero .corpo{position:relative;z-index:1;padding:30px;width:100%}
-.hero h2{font:800 clamp(1.7rem,3.6vw,2.7rem)/1.1 SANS;letter-spacing:-.02em;margin:.55rem 0}
+.hero .corpo{position:relative;z-index:1;padding:42px;width:100%}
+.hero h2{font:800 clamp(1.9rem,3.8vw,3.3rem)/1.08 SANS;letter-spacing:-.02em;margin:.55rem 0}
 .hero h2 a:hover{text-decoration:underline}
-.hero p{font-size:1.1rem;color:#E3E9F3;margin:0 0 .8rem;max-width:62ch}
+.hero p{font-size:1.22rem;color:#E3E9F3;margin:0 0 .9rem;max-width:68ch}
 .hero .rodape{color:#C9D3E3}
-.lateral{display:grid;gap:14px;align-content:start}
+.lateral{display:grid;gap:22px;align-content:start}
 .card,.mini{position:relative;background:var(--cartao);border:1px solid var(--linha);border-top:3px solid var(--cor);border-radius:14px;overflow:hidden;box-shadow:var(--sombra);transition:transform .18s,box-shadow .18s}
 .card:hover,.mini:hover{transform:translateY(-3px);box-shadow:var(--alta)}
 .card img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block;background:var(--linha);transition:transform .5s}
 .card:hover img{transform:scale(1.04)}
-.corpo{padding:15px 17px 17px}
-.mini{display:grid;grid-template-columns:116px 1fr;border-top-width:1px;border-left:4px solid var(--cor)}
+.corpo{padding:22px 24px 24px}
+.mini{display:grid;grid-template-columns:150px 1fr;border-top-width:1px;border-left:4px solid var(--cor)}
 .mini.sem{grid-template-columns:1fr}
 .mini img{width:100%;height:100%;object-fit:cover;background:var(--linha)}
 .chip{display:inline-block;background:var(--cor);color:#fff;font:700 .75rem/1 SANS;padding:5px 10px;border-radius:99px}
-h3{font:700 1.12rem/1.27 SANS;letter-spacing:-.01em;margin:.6rem 0 .4rem}
-.mini h3{font-size:1rem}
-.card p,.mini p{margin:0 0 .65rem;color:var(--suave);font-size:.98rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+h3{font:700 1.22rem/1.3 SANS;letter-spacing:-.01em;margin:.6rem 0 .4rem}
+.mini h3{font-size:1.1rem}
+.card p,.mini p{margin:0 0 .85rem;color:var(--suave);font-size:1.04rem;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .mini p{-webkit-line-clamp:2}
 .rodape{display:flex;justify-content:space-between;gap:12px;font:600 .8rem SANS;color:var(--suave)}
 .card h3 a::after,.mini h3 a::after{content:"";position:absolute;inset:0}
 .card.grande{grid-column:span 2;display:grid;grid-template-columns:1.25fr 1fr}
-.card.grande img{height:100%;min-height:270px;aspect-ratio:auto}
-.card.grande .corpo{align-self:center;padding:24px}
-.card.grande h3{font-size:1.65rem;line-height:1.2}
-.card.grande p{-webkit-line-clamp:5;font-size:1.05rem}
-.secao{font:800 1.3rem SANS;margin:0 0 18px;padding-left:12px;border-left:5px solid var(--alerta)}
-.cab-secao{display:flex;align-items:baseline;gap:14px;margin-bottom:20px;padding-left:14px;border-left:6px solid var(--cor)}
-.cab-secao h2{font:800 1.8rem/1.1 SANS;margin:0;letter-spacing:-.02em}
+.card.grande img{height:100%;min-height:330px;aspect-ratio:auto}
+.card.grande .corpo{align-self:center;padding:34px}
+.card.grande h3{font-size:2rem;line-height:1.2}
+.card.grande p{-webkit-line-clamp:6;font-size:1.12rem}
+.secao{font:800 1.6rem SANS;margin:0 0 26px;padding-left:12px;border-left:5px solid var(--alerta)}
+.cab-secao{display:flex;align-items:baseline;gap:14px;margin-bottom:30px;padding-left:14px;border-left:6px solid var(--cor)}
+.cab-secao h2{font:800 2.3rem/1.1 SANS;margin:0;letter-spacing:-.02em}
 .cab-secao span{color:var(--suave);font:600 .9rem SANS}
-.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
-footer{max-width:1200px;margin:0 auto;padding:0 20px 34px;color:var(--suave);font:500 .85rem SANS}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:30px}
+footer{max-width:1480px;margin:0 auto;padding:0 clamp(18px,3vw,44px) 40px;color:var(--suave);font:500 .85rem SANS}
 @media(max-width:900px){.destaque{grid-template-columns:1fr}.hero{min-height:390px}}
 @media(max-width:820px){.card.grande{grid-column:auto;display:block}.card.grande img{aspect-ratio:16/10;min-height:0}}
 @media(max-width:520px){.mini{grid-template-columns:96px 1fr}.hero .corpo{padding:20px}.faixa{padding:18px 20px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.painel{animation:none}*{transition:none!important}}
 @media print{.topo{background:#fff;color:#000}.data{color:#444}.abas,.tema{display:none}.painel[hidden]{display:block!important}.card,.mini,.hero{break-inside:avoid;box-shadow:none}}
+article[data-i]{cursor:pointer}
+body.l-aberto{overflow:hidden}
+.leitor{position:fixed;inset:0;z-index:50;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;padding:clamp(0px,3vw,36px)}
+.leitor[hidden]{display:none}
+.l-fundo{position:fixed;inset:0;background:rgba(6,12,24,.64);backdrop-filter:blur(3px)}
+.l-caixa{position:relative;width:min(1180px,100%);min-height:60vh;background:var(--fundo);border-radius:20px;box-shadow:var(--alta);border-top:6px solid var(--cor,#D7263D);animation:entra .22s ease}
+.l-barra{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px clamp(18px,3vw,36px);background:var(--fundo);border-bottom:1px solid var(--linha);border-radius:14px 14px 0 0}
+.l-acoes{display:flex;align-items:center;gap:10px}
+.btn{font:700 .85rem SANS;background:var(--tinta);color:var(--fundo);padding:10px 18px;border-radius:99px}
+.btn:hover{opacity:.88}
+#l-x{width:40px;height:40px;border-radius:50%;border:1px solid var(--linha);background:var(--cartao);color:var(--tinta);font-size:1.05rem;cursor:pointer}
+#l-x:hover{border-color:var(--cor)}
+.l-grade{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:clamp(24px,4vw,56px);padding:clamp(20px,3.5vw,46px)}
+.l-main h2{font:800 clamp(1.9rem,4vw,3.1rem)/1.1 SANS;letter-spacing:-.025em;margin:.8rem 0 .9rem}
+.l-deck{font:italic 400 clamp(1.15rem,2vw,1.4rem)/1.5 "Source Serif 4",Georgia,serif;color:var(--suave);margin:0 0 1.2rem}
+.l-meta{display:flex;flex-wrap:wrap;gap:14px;font:600 .85rem SANS;color:var(--suave);padding-bottom:18px;border-bottom:1px solid var(--linha);margin-bottom:24px}
+.l-midia{margin:0 0 28px}
+.l-midia img,.l-midia iframe{width:100%;aspect-ratio:16/9;object-fit:cover;border:0;border-radius:14px;display:block;background:var(--linha)}
+.l-texto p{font-size:1.22rem;line-height:1.75;margin:0 0 1.2rem;max-width:68ch}
+.l-aviso{font:500 .82rem/1.5 SANS;color:var(--suave);border-top:1px solid var(--linha);padding-top:14px;margin:28px 0 0}
+.l-mais{align-self:start;position:sticky;top:84px;background:var(--cartao);border:1px solid var(--linha);border-radius:14px;padding:18px 20px}
+.l-mais h3{font:800 1rem SANS;margin:0 0 6px}
+.l-mais button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--linha);padding:13px 0;color:var(--tinta);font:600 .96rem/1.35 SANS;cursor:pointer}
+#l-lista button:first-child{border-top:0}
+.l-mais button:hover{color:var(--cor)}
+.l-mais small{display:block;color:var(--suave);font:500 .75rem SANS;margin-top:4px}
+@media(max-width:900px){.l-grade{grid-template-columns:1fr}.l-mais{position:static}}
+@media(max-width:600px){.leitor{padding:0}.l-caixa{border-radius:0;min-height:100vh}.l-barra{border-radius:0}}
+@media print{.leitor{display:none!important}}
 """.replace("@@DARK@@", DARK).replace("SANS", SANS)
 
 JS = """
@@ -274,7 +318,61 @@ JS = """
   h.setAttribute('data-theme',nv);try{localStorage.setItem('jm-tema',nv)}catch(e){}
  });
 })();
+(function(){
+ var d=document,L=d.getElementById('leitor');
+ if(!L)return;
+ var D=[];try{D=JSON.parse(d.getElementById('dados').textContent)}catch(e){}
+ var NL=String.fromCharCode(10),ult=null;
+ function q(s){return L.querySelector(s)}
+ function el(t,c,x){var e=d.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+ function abrir(i){
+  var it=D[i];if(!it)return;
+  if(L.hidden)ult=d.activeElement;
+  q('.l-caixa').style.setProperty('--cor',it.c);
+  var sc=q('.l-secao');sc.textContent=it.s;sc.style.background=it.c;
+  q('#l-tit').textContent=it.t;
+  q('.l-deck').textContent=it.r;
+  var m=q('.l-meta');m.textContent='';m.appendChild(el('span','',it.f));if(it.h)m.appendChild(el('span','',it.h));
+  var f=q('.l-midia');f.textContent='';
+  if(it.v){var fr=d.createElement('iframe');fr.src='https://www.youtube-nocookie.com/embed/'+it.v;fr.title=it.t;fr.allow='encrypted-media; picture-in-picture';fr.allowFullscreen=true;f.appendChild(fr);f.hidden=false}
+  else if(it.i){var im=d.createElement('img');im.src=it.i;im.alt='';im.onerror=function(){f.hidden=true};f.appendChild(im);f.hidden=false}
+  else f.hidden=true;
+  var tx=q('.l-texto');tx.textContent='';
+  (it.d||'').split(NL).filter(function(p){return p.trim()}).forEach(function(p){tx.appendChild(el('p','',p))});
+  q('#l-orig').href=it.l;
+  var ls=q('#l-lista');ls.textContent='';var n=0;
+  D.forEach(function(o,j){if(j!==+i&&o.s===it.s&&n<6){n++;var b=el('button','',o.t);b.type='button';b.appendChild(el('small','',o.f));b.addEventListener('click',function(){abrir(j)});ls.appendChild(b)}});
+  q('.l-mais').hidden=!n;q('.l-mais h3 span').textContent=it.s;
+  L.hidden=false;d.body.classList.add('l-aberto');L.scrollTop=0;q('#l-x').focus({preventScroll:true});
+ }
+ function fechar(){if(L.hidden)return;L.hidden=true;d.body.classList.remove('l-aberto');q('.l-midia').textContent='';if(ult&&ult.focus)ult.focus({preventScroll:true})}
+ d.addEventListener('click',function(e){
+  if(e.target.closest('#leitor'))return;
+  var a=e.target.closest('article[data-i]');
+  if(!a||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button)return;
+  e.preventDefault();abrir(a.dataset.i);
+ });
+ q('#l-x').addEventListener('click',fechar);
+ q('.l-fundo').addEventListener('click',fechar);
+ d.addEventListener('keydown',function(e){
+  if(L.hidden)return;
+  if(e.key==='Escape'){fechar();return}
+  if(e.key==='Tab'){
+   var fs=[].slice.call(L.querySelectorAll('a[href],button')).filter(function(x){return x.offsetParent!==null});
+   if(!fs.length)return;var p=fs[0],u=fs[fs.length-1];
+   if(e.shiftKey&&d.activeElement===p){e.preventDefault();u.focus()}else if(!e.shiftKey&&d.activeElement===u){e.preventDefault();p.focus()}
+  }
+ });
+})();
 """
+
+LEITOR = """<div class="leitor" id="leitor" role="dialog" aria-modal="true" aria-labelledby="l-tit" hidden>
+<div class="l-fundo"></div>
+<div class="l-caixa">
+<div class="l-barra"><span class="chip l-secao"></span><div class="l-acoes"><a class="btn" id="l-orig" href="#" target="_blank" rel="noopener noreferrer">Read original &#8599;</a><button id="l-x" type="button" aria-label="Close">&#10005;</button></div></div>
+<div class="l-grade"><div class="l-main"><h2 id="l-tit"></h2><p class="l-deck"></p><div class="l-meta"></div><figure class="l-midia" hidden></figure><div class="l-texto"></div><p class="l-aviso">Summary written by AI from the source's feed. Read the original for the full story.</p></div>
+<aside class="l-mais" hidden><h3>More in <span></span></h3><div id="l-lista"></div></aside></div>
+</div></div>"""
 
 
 def esc(s):
@@ -319,11 +417,11 @@ def miolo(it, tag):
 
 def cartao(it, classe="card"):
     sem = "" if it.get("imagem") else " sem"
-    return f'<article class="{classe}{sem}" style="--cor:{cor(it["secao"])}">{foto(it)}{miolo(it, "h3")}</article>'
+    return f'<article class="{classe}{sem}" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">{foto(it)}{miolo(it, "h3")}</article>'
 
 
 def hero(it):
-    return f'<article class="hero" style="--cor:{cor(it["secao"])}">{foto(it)}{miolo(it, "h2")}</article>'
+    return f'<article class="hero" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">{foto(it)}{miolo(it, "h2")}</article>'
 
 
 def aba(id_, nome, cor_, n, ativa=False):
@@ -347,6 +445,12 @@ def pagina(itens, agora):
     for it in itens:
         it["secao"] = canonica(it.get("secao"))
         it["hora"] = ha(it.get("quando"), agora)
+    for n, it in enumerate(itens):
+        it["_i"] = n
+    dados = [{"t": i["titulo"], "r": i["resumo"], "d": i.get("detalhe") or "", "s": i["secao"], "c": cor(i["secao"]),
+              "f": i["fonte"], "h": i.get("hora", ""), "l": i["link"], "i": i.get("imagem", ""), "v": video_id(i)}
+             for i in itens]
+    dados_json = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028")
     capa = itens[:OPC["total_itens"]]
     minutos = max(1, round(sum(len((i["titulo"] + " " + i["resumo"]).split()) for i in capa) / 200))
     topo = (f'<section class="destaque">{hero(capa[0])}'
@@ -371,6 +475,8 @@ def pagina(itens, agora):
 <nav class="abas" aria-label="Sections"><div class="abas-in" role="tablist">{abas}</div></nav>
 <main>{paineis}</main>
 <footer>Edition assembled at {agora:%H:%M} (Brasília time) with Gemini summaries. Always check the original source.</footer>
+{LEITOR}
+<script type="application/json" id="dados">{dados_json}</script>
 <script>{JS}</script></body></html>"""
 
 
@@ -418,6 +524,18 @@ def main():
                 it["imagem"] = ""
         if it["imagem"]:
             vistas.add(it["imagem"])
+    det = {}
+    try:
+        for e in gemini(prompt_detalhe(finais[:OPC["total_itens"]])):
+            try:
+                det[int(re.sub(r"\D", "", str(e.get("id"))))] = (e.get("detalhe") or "").strip()
+            except ValueError:
+                pass
+        print(f"Textos longos gerados para {sum(1 for v in det.values() if v)} notícias.")
+    except Exception as e:
+        print(f"[aviso] textos longos não gerados: {e}")
+    for it in finais:
+        it["detalhe"] = det.get(it["id"], "")
     agora = datetime.datetime.now(ZoneInfo("America/Sao_Paulo"))
     saida = pagina(finais, agora)
     os.makedirs(os.path.join(RAIZ, "docs", "edicoes"), exist_ok=True)
