@@ -71,7 +71,10 @@ def ler_feed(fonte, url=None):
         itens.append({"fonte": fonte["nome"], "titulo": limpar(txt("title"), 200), "link": link,
                       "resumo": limpar(blob, 400), "texto": limpar(blob, 1600), "video": bool(fonte.get("youtube")), "imagem": imagem_do_item(el, blob), "quando": quando})
     itens.sort(key=lambda i: i["quando"] or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc), reverse=True)
-    return itens[:fonte.get("max", OPC["itens_por_fonte"])]
+    lim = fonte.get("max", OPC["itens_por_fonte"])
+    for n, it in enumerate(itens):
+        it["extra"] = n >= lim
+    return itens[:lim * OPC.get("fator_extra", 2)]
 
 
 def ler_youtube(fonte):
@@ -171,6 +174,32 @@ Reply ONLY with JSON: {{"itens":[{{"id":0,"detalhe":"..."}}]}}
 
 STORIES:
 {linhas}"""
+
+
+def complementar(itens, obrig_ids, lote=90):
+    """Traduz títulos para inglês; para os itens obrigatórios, devolve também resumo e seção."""
+    res = {}
+    for k in range(0, len(itens), lote):
+        linhas = "\n".join(
+            f'[{i["id"]}] ({i["fonte"]}{", MUST" if i["id"] in obrig_ids else ""}) {i["titulo"]}'
+            + (f' :: {i["resumo"][:200]}' if i["id"] in obrig_ids else "") for i in itens[k:k + lote])
+        pedido = f"""You are a newspaper editor. Below are news items, one per line.
+For every item whose headline is NOT already in English, return its id and "titulo": the headline translated to English (up to 90 characters, faithful, nothing invented).
+Items marked MUST are different: ALWAYS return them, with "titulo" (English, up to 90 characters), "resumo" (1 or 2 faithful sentences in English) and "secao" (exactly one of: {SECOES_VALIDAS}).
+Do not return English-language items that are not marked MUST.
+Reply ONLY with JSON: {{"itens":[{{"id":0,"titulo":"...","resumo":"...","secao":"..."}}]}}
+
+ITEMS:
+{linhas}"""
+        try:
+            for e in gemini(pedido):
+                try:
+                    res[int(re.sub(r"\D", "", str(e.get("id"))))] = e
+                except ValueError:
+                    pass
+        except Exception as ex:
+            print(f"[aviso] complemento {k // lote + 1} falhou: {ex}")
+    return res
 
 
 def video_id(it):
@@ -292,6 +321,41 @@ body.l-aberto{overflow:hidden}
 @media(max-width:900px){.l-grade{grid-template-columns:1fr}.l-mais{position:static}}
 @media(max-width:600px){.leitor{padding:0}.l-caixa{border-radius:0;min-height:100vh}.l-barra{border-radius:0}}
 @media print{.leitor{display:none!important}}
+.topo{background:none;color:var(--tinta);border-bottom:0}
+.faixa{padding-bottom:8px}
+h1{font-weight:800;letter-spacing:-.04em}
+.data{color:var(--suave)}
+.pilula{background:var(--cartao);border:1px solid var(--linha);color:var(--tinta)}
+.tema{border-color:var(--linha);color:var(--tinta)}
+.bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:210px;grid-auto-flow:dense;gap:18px}
+.grade-t{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));grid-auto-rows:300px;grid-auto-flow:dense;gap:18px}
+.tile{position:relative;overflow:hidden;border-radius:24px;color:#fff;display:flex;align-items:flex-end;background:linear-gradient(145deg,var(--cor),#0F172A);box-shadow:var(--sombra);transition:transform .2s,box-shadow .2s}
+.tile:hover{transform:translateY(-4px);box-shadow:var(--alta)}
+.tile>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.tile:hover>img{transform:scale(1.06)}
+.tile:has(>img)::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(8,12,24,.9),rgba(8,12,24,.1) 70%)}
+.tile .in{position:relative;z-index:1;padding:20px;width:100%}
+.tile h3{font:800 1.15rem/1.2 SANS;letter-spacing:-.015em;margin:.55rem 0 .3rem;color:#fff}
+.tile h3 a::after{content:"";position:absolute;inset:0;z-index:2}
+.tile small{opacity:.85;font:600 .76rem SANS}
+.tile p{margin:.2rem 0 .6rem;opacity:.92;max-width:52ch;font-size:1.02rem}
+.dest{grid-column:span 2;grid-row:span 2}.dest h3{font-size:clamp(1.6rem,2.8vw,2.4rem);line-height:1.1}
+.alto{grid-row:span 2}.largo{grid-column:span 2}
+.tile.txt .in{padding:24px}.tile.txt h3{font-size:1.3rem}
+@media(max-width:1000px){.bento{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.bento{grid-template-columns:1fr;grid-auto-rows:230px}.dest,.largo{grid-column:auto}.alto{grid-row:auto}.grade-t{grid-template-columns:1fr}}
+.fontes-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:26px;align-items:start}
+.fonte-card{background:var(--cartao);border:1px solid var(--linha);border-top:3px solid var(--cor);border-radius:14px;padding:20px 22px;box-shadow:var(--sombra)}
+.fonte-card h3{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px;font:800 1.1rem SANS}
+.fonte-card h3 span{color:var(--suave);font:600 .85rem SANS}
+.fonte-card ul{list-style:none;margin:0;padding:0}
+.fonte-card li{padding:11px 0;border-top:1px solid var(--linha);font:600 .98rem/1.38 SANS}
+.fonte-card li:first-child{border-top:0}
+.fonte-card li a:hover{color:var(--cor);text-decoration:underline}
+.fonte-card li small{display:block;margin-top:3px;color:var(--suave);font:500 .75rem SANS}
+.fonte-card details{border-top:1px solid var(--linha);margin-top:4px}
+.fonte-card summary{cursor:pointer;padding:12px 0 4px;font:700 .88rem SANS;color:var(--cor)}
+@media(max-width:520px){.fontes-grade{grid-template-columns:1fr}}
 """.replace("@@DARK@@", DARK).replace("SANS", SANS)
 
 JS = """
@@ -430,17 +494,42 @@ def aba(id_, nome, cor_, n, ativa=False):
             f'<span class="n">{n}</span></button>')
 
 
+def tile(it, extra="", longo=False):
+    sem = "" if it.get("imagem") else " txt"
+    p = f'<p>{esc(it["resumo"])}</p>' if longo else ""
+    hora = f' · {esc(it["hora"])}' if it.get("hora") else ""
+    return (f'<article class="tile {extra}{sem}" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">{foto(it)}'
+            f'<div class="in"><span class="chip">{esc(it["secao"])}</span>'
+            f'<h3><a href="{esc(it["link"])}">{esc(it["titulo"])}</a></h3>{p}<small>{esc(it["fonte"])}{hora}</small></div></article>')
+
+
 def painel_secao(nome, lista):
     id_ = sem_acento(nome)
-    cards = "".join(
-        cartao(i, "card grande" if (n == 0 and i.get("imagem") and len(lista) > 1) else "card")
-        for n, i in enumerate(lista))
+    cards = "".join(tile(i, "largo" if (n == 0 and i.get("imagem") and len(lista) > 1) else "") for n, i in enumerate(lista))
     return (f'<section class="painel" id="p-{id_}" role="tabpanel" aria-labelledby="aba-{id_}" style="--cor:{cor(nome)}">'
             f'<div class="cab-secao"><h2>{esc(nome)}</h2><span>{len(lista)} {"story" if len(lista) == 1 else "stories"}</span></div>'
-            f'<div class="grade">{cards}</div></section>')
+            f'<div class="grade-t">{cards}</div></section>')
 
 
-def pagina(itens, agora):
+def painel_todas(todas, agora):
+    blocos = []
+    for g in todas:
+        lis = []
+        for it in g["itens"]:
+            hora = ha(it["q"], agora)
+            peq = f"<small>{esc(hora)}</small>" if hora else ""
+            lis.append(f'<li><a href="{esc(it["l"])}" target="_blank" rel="noopener noreferrer">{esc(it["t"])}</a>{peq}</li>')
+        resto = lis[10:]
+        mais = f'<details><summary>Show {len(resto)} more</summary><ul>{"".join(resto)}</ul></details>' if resto else ""
+        blocos.append(f'<section class="fonte-card"><h3>{esc(g["nome"])} <span>{len(lis)}</span></h3>'
+                      f'<ul>{"".join(lis[:10])}</ul>{mais}</section>')
+    total = sum(len(g["itens"]) for g in todas)
+    return (f'<section class="painel" id="p-todas" role="tabpanel" aria-labelledby="aba-todas" style="--cor:#475569">'
+            f'<div class="cab-secao"><h2>All headlines</h2><span>{total} headlines from {len(todas)} sources</span></div>'
+            f'<div class="fontes-grade">{"".join(blocos)}</div></section>')
+
+
+def pagina(itens, agora, todas=None):
     quando = f"{DIAS[agora.weekday()]}, {MESES[agora.month - 1]} {agora.day}, {agora.year}"
     for it in itens:
         it["secao"] = canonica(it.get("secao"))
@@ -453,16 +542,19 @@ def pagina(itens, agora):
     dados_json = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028")
     capa = itens[:OPC["total_itens"]]
     minutos = max(1, round(sum(len((i["titulo"] + " " + i["resumo"]).split()) for i in capa) / 200))
-    topo = (f'<section class="destaque">{hero(capa[0])}'
-            f'<div class="lateral">{"".join(cartao(i, "mini") for i in capa[1:4])}</div></section>')
-    grade = (f'<h2 class="secao">More stories</h2><div class="grade">{"".join(cartao(i) for i in capa[4:])}</div>'
-             if len(capa) > 4 else "")
+    padrao = ["", "alto", "", "largo", "", "alto", "", "largo"]
+    topo = ('<div class="bento">' + tile(capa[0], "dest", True)
+            + "".join(tile(i, padrao[n % 8]) for n, i in enumerate(capa[1:])) + '</div>')
+    grade = ""
     grupos = {n: [i for i in itens if i["secao"] == n] for n in ORDEM}
     grupos = {n: l for n, l in grupos.items() if l}
     abas = aba("capa", "Front page", "#D7263D", len(capa), True) + "".join(
         aba(sem_acento(n), n, cor(n), len(l)) for n, l in grupos.items())
     paineis = (f'<section class="painel" id="p-capa" role="tabpanel" aria-labelledby="aba-capa" style="--cor:#D7263D">'
                f'{topo}{grade}</section>') + "".join(painel_secao(n, l) for n, l in grupos.items())
+    if todas:
+        abas += aba("todas", "All headlines", "#475569", sum(len(g["itens"]) for g in todas))
+        paineis += painel_todas(todas, agora)
     return f"""<!doctype html><html lang="en" class="no-js"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark">
 <title>{esc(OPC["titulo"])} – {quando}</title>
@@ -482,7 +574,7 @@ def pagina(itens, agora):
 
 def main():
     coletados = []
-    for f in CFG["fontes"]:
+    for k, f in enumerate(CFG["fontes"]):
         itens = []
         try:
             itens = ler_youtube(f) if f.get("youtube") else ler_feed(f)
@@ -494,14 +586,17 @@ def main():
                 print(f"[aviso] {f['nome']}: usando plano B ({len(itens)} manchetes)")
             except Exception as e:
                 print(f"[aviso] plano B de {f['nome']} falhou: {e}")
-        print(f"{f['nome']}: {len(itens)} itens")
+        print(f"{f['nome']}: {len(itens)} itens ({sum(1 for i in itens if i.get('extra'))} extras)")
+        for it in itens:
+            it["src"] = k
         coletados += itens
     if not coletados:
         sys.exit("Nenhum item coletado; a edição anterior continua no ar.")
     for n, it in enumerate(coletados):
         it["id"] = n
     por_id, usados, finais = {i["id"]: i for i in coletados}, set(), []
-    escolhidos = gemini(prompt(coletados, OPC.get("total_abas", 80), OPC["total_itens"]))
+    principais = [i for i in coletados if not i.get("extra")]
+    escolhidos = gemini(prompt(principais, OPC.get("total_abas", 80), OPC["total_itens"]))
     print(f"Gemini devolveu {len(escolhidos)} itens.")
     for e in escolhidos:
         try:
@@ -514,6 +609,24 @@ def main():
                            "resumo": e.get("resumo") or base["resumo"], "secao": canonica(e.get("secao"))})
     if len(finais) < 5:
         sys.exit("O Gemini devolveu itens de menos; a edição anterior continua no ar.")
+    # manchetes obrigatórias: as N mais recentes de cada fonte entram sempre
+    n_obrig, contagem, obrig = OPC.get("obrigatorias_por_fonte", 2), {}, []
+    ids_final = {i["id"] for i in finais}
+    for it in principais:
+        contagem[it["src"]] = contagem.get(it["src"], 0) + 1
+        if contagem[it["src"]] <= n_obrig and it["id"] not in ids_final:
+            obrig.append(it)
+    obrig_ids = {i["id"] for i in obrig}
+    resto = [i for i in coletados if i["id"] not in ids_final and i["id"] not in obrig_ids]
+    extra = complementar(obrig + resto, obrig_ids)
+    for it in obrig:
+        e = extra.get(it["id"], {})
+        finais.append({**it, "titulo": e.get("titulo") or it["titulo"], "resumo": e.get("resumo") or it["resumo"][:240],
+                       "secao": canonica(e.get("secao"))})
+    titulos = {i["id"]: i["titulo"] for i in finais}
+    for it in resto:
+        titulos[it["id"]] = extra.get(it["id"], {}).get("titulo") or it["titulo"]
+    print(f"Obrigatórias adicionadas: {len(obrig)} | só manchetes: {len(resto)}")
     vistas = set()
     for n, it in enumerate(finais):
         if it["imagem"] in vistas:
@@ -537,7 +650,30 @@ def main():
     for it in finais:
         it["detalhe"] = det.get(it["id"], "")
     agora = datetime.datetime.now(ZoneInfo("America/Sao_Paulo"))
-    saida = pagina(finais, agora)
+    por_fonte = {}
+    for it in coletados:
+        por_fonte.setdefault(it["fonte"], []).append(it)
+    sem_data = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+    todas = []
+    for nome, lst in por_fonte.items():
+        vistos_l, linhas = set(), []
+        for it in sorted(lst, key=lambda x: x.get("quando") or sem_data, reverse=True):
+            if it["link"] not in vistos_l:
+                vistos_l.add(it["link"])
+                linhas.append({"t": titulos.get(it["id"], it["titulo"]), "l": it["link"], "q": it.get("quando")})
+        todas.append({"nome": nome, "itens": linhas})
+    por_src, outras = {}, []
+    for it in resto:
+        por_src.setdefault(it["src"], []).append(it)
+    for rodada in range(3):
+        for k in sorted(por_src):
+            if rodada < len(por_src[k]) and len(outras) < 15:
+                outras.append({"t": titulos[por_src[k][rodada]["id"]], "f": por_src[k][rodada]["fonte"]})
+    saida = pagina(finais, agora, todas)
+    os.makedirs(os.path.join(RAIZ, "docs"), exist_ok=True)
+    json.dump({"itens": [{"t": i["titulo"], "r": i["resumo"], "d": i.get("detalhe", ""), "s": i["secao"], "f": i["fonte"]}
+                         for i in finais], "outras": outras},
+              open(os.path.join(RAIZ, "docs", "noticias.json"), "w", encoding="utf-8"), ensure_ascii=False)
     os.makedirs(os.path.join(RAIZ, "docs", "edicoes"), exist_ok=True)
     for caminho in ("index.html", f"edicoes/{agora:%Y-%m-%d}.html"):
         open(os.path.join(RAIZ, "docs", caminho), "w", encoding="utf-8").write(saida)
