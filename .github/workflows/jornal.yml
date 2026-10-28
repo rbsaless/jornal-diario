@@ -38,7 +38,6 @@ jobs:
             -d chat_id="${TELEGRAM_CHAT_ID}" \
             -d text="Seu jornal de hoje está pronto: https://rbsaless.github.io/jornal-diario/"
       - name: Podcast
-        if: false
         continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
