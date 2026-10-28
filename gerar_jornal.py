@@ -215,7 +215,7 @@ ALIAS = {"brasil": "Brazil", "politica": "Politics", "mundo": "World", "economia
 SECOES = {"politics": "#1D4ED8", "world": "#0F766E", "economy": "#15803D", "sports": "#C2410C",
           "technology": "#6D28D9", "health": "#BE185D", "brazil": "#A16207", "culture": "#7E22CE",
           "science": "#0E7490", "space": "#3730A3", "koreas": "#A21CAF", "video": "#B91C1C"}
-SANS = '"Libre Franklin",system-ui,-apple-system,"Segoe UI",sans-serif'
+SANS = '"Inter",system-ui,-apple-system,"Segoe UI",sans-serif'
 DARK = ("--fundo:#0B1220;--cartao:#121B2E;--tinta:#E8EDF6;--suave:#9AA7BC;--linha:#233049;--marca:#070D1A;"
         "--marca2:#0E2347;--sombra:0 1px 2px rgba(0,0,0,.35);--alta:0 12px 30px rgba(0,0,0,.5);color-scheme:dark")
 
@@ -356,6 +356,46 @@ h1{font-weight:800;letter-spacing:-.04em}
 .fonte-card details{border-top:1px solid var(--linha);margin-top:4px}
 .fonte-card summary{cursor:pointer;padding:12px 0 4px;font:700 .88rem SANS;color:var(--cor)}
 @media(max-width:520px){.fontes-grade{grid-template-columns:1fr}}
+:root{--fundo:#fff;--cartao:#fff;--tinta:#111;--suave:#555;--linha:#e5e5e5;--alerta:#e11d48;--sombra:none}
+.topo{border-bottom:3px solid var(--tinta)}
+.faixa{padding-bottom:14px}
+h1{font:800 clamp(1.7rem,4vw,2.4rem)/1 SANS;letter-spacing:-.04em}
+h1::after{content:".";color:var(--alerta)}
+.abas{border-bottom:1px solid var(--linha)}
+.aba{border:0;border-radius:0;background:none;padding:10px 4px;margin-right:14px;font:600 .85rem SANS;border-bottom:2px solid transparent}
+.aba:hover{border-color:var(--alerta)}
+.aba[aria-selected="true"]{background:none;color:var(--alerta);border-color:var(--alerta)}
+.ponto{display:none}
+.pilula{border-radius:4px;background:none;font-weight:600}
+main{padding-top:28px}
+.k{font:800 .72rem SANS;color:var(--alerta);text-transform:uppercase;letter-spacing:.04em}
+.meta{font:600 .78rem SANS;color:var(--suave)}
+.ed-top{display:grid;grid-template-columns:2fr 1fr;gap:36px;margin-bottom:44px}
+.ed-hero,.cd,.row{position:relative;cursor:pointer}
+.im{overflow:hidden;border-radius:6px;background:linear-gradient(135deg,var(--cor),#0f172a)}
+.im img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.ed-hero:hover .im img,.cd:hover .im img{transform:scale(1.04)}
+.ed-hero .im{aspect-ratio:16/9}
+.ed-hero h2{font:800 clamp(1.9rem,3.6vw,2.8rem)/1.08 SANS;letter-spacing:-.03em;margin:14px 0 10px}
+.ed-hero p{color:var(--suave);font-size:1.15rem;line-height:1.55;margin:0 0 10px}
+.row{display:grid;grid-template-columns:96px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--linha)}
+.row.sem{grid-template-columns:1fr}
+.row .im{aspect-ratio:1}
+.row h3{font:700 1.02rem/1.28 SANS;margin:3px 0 4px;letter-spacing:-.01em}
+.ed-lado .row:first-child{padding-top:0}
+.sec-ed{font:800 1.3rem SANS;border-top:3px solid var(--tinta);padding-top:10px;margin:0 0 20px;display:flex;justify-content:space-between;align-items:baseline}
+.sec-ed span{font:600 .85rem SANS;color:var(--suave)}
+.grade-ed{display:grid;grid-template-columns:repeat(3,1fr);gap:30px 26px;margin-bottom:44px}
+.cd .im{aspect-ratio:16/10;margin-bottom:10px}
+.cd h3{font:700 1.2rem/1.25 SANS;letter-spacing:-.015em;margin:4px 0 6px}
+.cd p{color:var(--suave);font-size:.98rem;line-height:1.5;margin:0 0 8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.lista-ed{display:grid;grid-template-columns:repeat(2,1fr);column-gap:40px}
+:root[data-theme="dark"]{--fundo:#0B1220;--cartao:#121B2E;--tinta:#E8EDF6;--suave:#9AA7BC;--linha:#233049;--alerta:#fb4a6b}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--fundo:#0B1220;--cartao:#121B2E;--tinta:#E8EDF6;--suave:#9AA7BC;--linha:#233049;--alerta:#fb4a6b}}
+
+.h3a::after{content:"";position:absolute;inset:0}
+@media(max-width:900px){.ed-top{grid-template-columns:1fr}.grade-ed{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grade-ed,.lista-ed{grid-template-columns:1fr}}
 """.replace("@@DARK@@", DARK).replace("SANS", SANS)
 
 JS = """
@@ -503,12 +543,39 @@ def tile(it, extra="", longo=False):
             f'<h3><a href="{esc(it["link"])}">{esc(it["titulo"])}</a></h3>{p}<small>{esc(it["fonte"])}{hora}</small></div></article>')
 
 
+def im(it, cls="im"):
+    return f'<div class="{cls}">{foto(it)}</div>' if it.get("imagem") else ""
+
+
+def meta(it):
+    hora = f' · {esc(it["hora"])}' if it.get("hora") else ""
+    return f'<div class="meta">{esc(it["fonte"])}{hora}</div>'
+
+
+def ed_hero(it):
+    return (f'<article class="ed-hero" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">'
+            f'<div class="im">{foto(it)}</div><div class="k" style="margin-top:14px">{esc(it["secao"])}</div>'
+            f'<h2><a class="h3a" href="{esc(it["link"])}">{esc(it["titulo"])}</a></h2><p>{esc(it["resumo"])}</p>{meta(it)}</article>')
+
+
+def ed_row(it):
+    sem = "" if it.get("imagem") else " sem"
+    return (f'<article class="row{sem}" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">{im(it)}'
+            f'<div><div class="k">{esc(it["secao"])}</div><h3><a class="h3a" href="{esc(it["link"])}">{esc(it["titulo"])}</a></h3>{meta(it)}</div></article>')
+
+
+def ed_card(it):
+    return (f'<article class="cd" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">{im(it)}'
+            f'<div class="k">{esc(it["secao"])}</div><h3><a class="h3a" href="{esc(it["link"])}">{esc(it["titulo"])}</a></h3>'
+            f'<p>{esc(it["resumo"])}</p>{meta(it)}</article>')
+
+
 def painel_secao(nome, lista):
     id_ = sem_acento(nome)
-    cards = "".join(tile(i, "largo" if (n == 0 and i.get("imagem") and len(lista) > 1) else "") for n, i in enumerate(lista))
+    cards = "".join(ed_card(i) for i in lista)
     return (f'<section class="painel" id="p-{id_}" role="tabpanel" aria-labelledby="aba-{id_}" style="--cor:{cor(nome)}">'
             f'<div class="cab-secao"><h2>{esc(nome)}</h2><span>{len(lista)} {"story" if len(lista) == 1 else "stories"}</span></div>'
-            f'<div class="grade-t">{cards}</div></section>')
+            f'<div class="grade-ed">{cards}</div></section>')
 
 
 def painel_todas(todas, agora):
@@ -542,9 +609,13 @@ def pagina(itens, agora, todas=None):
     dados_json = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028")
     capa = itens[:OPC["total_itens"]]
     minutos = max(1, round(sum(len((i["titulo"] + " " + i["resumo"]).split()) for i in capa) / 200))
-    padrao = ["", "alto", "", "largo", "", "alto", "", "largo"]
-    topo = ('<div class="bento">' + tile(capa[0], "dest", True)
-            + "".join(tile(i, padrao[n % 8]) for n, i in enumerate(capa[1:])) + '</div>')
+    capa = itens
+    topo = (f'<div class="ed-top">{ed_hero(capa[0])}<div class="ed-lado">' + "".join(ed_row(i) for i in capa[1:6]) + '</div></div>')
+    if capa[6:18]:
+        topo += '<div class="sec-ed">Top stories</div><div class="grade-ed">' + "".join(ed_card(i) for i in capa[6:18]) + '</div>'
+    if capa[18:]:
+        topo += (f'<div class="sec-ed">More stories<span>{len(capa) - 18} more</span></div>'
+                 '<div class="lista-ed">' + "".join(ed_row(i) for i in capa[18:]) + '</div>')
     grade = ""
     grupos = {n: [i for i in itens if i["secao"] == n] for n in ORDEM}
     grupos = {n: l for n, l in grupos.items() if l}
@@ -559,7 +630,7 @@ def pagina(itens, agora, todas=None):
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark">
 <title>{esc(OPC["titulo"])} – {quando}</title>
 <script>document.documentElement.className="js";try{{var v=localStorage.getItem("jm-tema");if(v)document.documentElement.setAttribute("data-theme",v)}}catch(e){{}}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700;800&family=Source+Serif+4:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Source+Serif+4:wght@400;600&display=swap">
 <style>{CSS}</style></head><body>
 <header class="topo"><div class="faixa"><div><h1>{esc(OPC["titulo"])}</h1><span class="data">{quando}</span></div>
 <div class="metas"><span class="pilula">{len(itens)} stories</span><span class="pilula">{minutos} min front page</span>
