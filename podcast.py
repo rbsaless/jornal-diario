@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Lê docs/index.html, gera um podcast em inglês (2 vozes, Gemini TTS) e envia ao Telegram."""
-import base64, html, io, json, os, re, shutil, subprocess, sys, uuid, wave
+import base64, html, io, json, os, re, shutil, subprocess, sys, time, uuid, wave
 import urllib.error, urllib.request
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 CHAVE = os.environ["GEMINI_API_KEY"].strip()
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"].strip()
 CHAT = os.environ["TELEGRAM_CHAT_ID"].strip()
-N_NOTICIAS = 12
+N_NOTICIAS = 20
+N_BLOCOS = 3  # 3 blocos de ~550 palavras = ~10 minutos
 MODELOS_TEXTO = [m for m in [os.environ.get("GEMINI_MODEL"), "gemini-flash-lite-latest",
                              "gemini-3.5-flash-lite", "gemini-3.8-flash"] if m]
 MODELOS_VOZ = [m for m in [os.environ.get("GEMINI_TTS_MODEL"), "gemini-2.5-flash-preview-tts",
@@ -43,12 +44,19 @@ def chamar(modelo, corpo, t=180):
         return json.load(r)["candidates"][0]["content"]["parts"][0]
 
 
-def roteiro(itens):
-    pedido = ("Write a casual two-host news podcast script in English, about 800 words (5-6 minutes). "
+def roteiro(itens, i, n):
+    if i == 0:
+        regra = ("Alex must open with exactly this sentence: 'This is The Morning Paper report.' "
+                 "Then go straight into the stories, with no other greeting or small talk. ")
+    else:
+        regra = ("This is a continuation of an episode already in progress: do NOT greet, do NOT introduce the show. "
+                 "Start with a short natural transition into the next stories. ")
+    fim = ("End with a short sign-off from both hosts. " if i == n - 1
+           else "Do NOT close or sign off; the episode continues after this part. ")
+    pedido = ("Write a casual two-host news podcast script in English, at least 550 words (about 3 to 4 minutes when spoken). "
               "Hosts: Alex and Sam. Short sentences, natural reactions, light banter, no emojis. "
-              "Cover the stories below, grouping related ones; stay faithful to the facts, invent nothing. "
-              "Alex must open with exactly this sentence: 'This is The Morning Paper report.' "
-              "Then go straight into the stories, with no other greeting or small talk. Close with a short sign-off. "
+              "Cover EVERY story below with real detail (who, what, where, why it matters), grouping related ones; "
+              "stay faithful to the facts, invent nothing. " + regra + fim +
               "Format STRICTLY as lines starting with 'Alex:' or 'Sam:' and nothing else.\n\nSTORIES:\n"
               + "\n".join(itens))
     for m in MODELOS_TEXTO:
@@ -56,27 +64,35 @@ def roteiro(itens):
             t = chamar(m, {"contents": [{"parts": [{"text": pedido}]}],
                            "generationConfig": {"temperature": 0.7}})["text"]
             linhas = [l.strip() for l in t.splitlines() if re.match(r"^(Alex|Sam):", l.strip())]
-            if len(linhas) >= 6:
-                print(f"Roteiro: {m}, {len(linhas)} falas")
+            if len(linhas) >= 8:
+                print(f"Roteiro {i + 1}/{n}: {m}, {len(linhas)} falas")
                 return "\n".join(linhas)
         except Exception as e:
-            print(f"[aviso] roteiro {m}: {e}")
-    raise RuntimeError("sem roteiro")
+            print(f"[aviso] roteiro {i + 1} {m}: {e}")
+    raise RuntimeError(f"sem roteiro do bloco {i + 1}")
 
 
-def voz(script):
+def voz(script, i):
     corpo = {"contents": [{"parts": [{"text": "Read this as a lively, friendly podcast conversation:\n" + script}]}],
              "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {"multiSpeakerVoiceConfig": {
                  "speakerVoiceConfigs": [{"speaker": k, "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": v}}}
                                          for k, v in VOZES.items()]}}}}
     for m in MODELOS_VOZ:
-        try:
-            pcm = base64.b64decode(chamar(m, corpo, 300)["inlineData"]["data"])
-            print(f"Voz: {m}, {len(pcm)} bytes")
-            return pcm
-        except Exception as e:
-            print(f"[aviso] voz {m}: {e}")
-    raise RuntimeError("sem áudio")
+        for tentativa in range(3):
+            try:
+                pcm = base64.b64decode(chamar(m, corpo, 300)["inlineData"]["data"])
+                print(f"Voz bloco {i + 1}: {m}, {len(pcm)} bytes (~{len(pcm) // 48000}s)")
+                return pcm
+            except urllib.error.HTTPError as e:
+                print(f"[aviso] voz bloco {i + 1} {m}: HTTP {e.code} (tentativa {tentativa + 1})")
+                if e.code in (429, 500, 503) and tentativa < 2:
+                    time.sleep(45 * (tentativa + 1))
+                    continue
+                break
+            except Exception as e:
+                print(f"[aviso] voz bloco {i + 1} {m}: {e}")
+                break
+    raise RuntimeError(f"sem áudio do bloco {i + 1}")
 
 
 def para_arquivo(pcm):
@@ -110,16 +126,36 @@ def main():
     itens = noticias()
     if len(itens) < 3:
         sys.exit("Poucas notícias no index.html; podcast ignorado.")
-    script = roteiro(itens)
+    tam = -(-len(itens) // N_BLOCOS)
+    blocos = [itens[k:k + tam] for k in range(0, len(itens), tam)]
+    roteiros, pcm, silencio = [], b"", b"\x00" * int(24000 * 2 * 0.7)
+    for i, b in enumerate(blocos):
+        try:
+            s = roteiro(b, i, len(blocos))
+        except Exception as e:
+            print(f"[aviso] {e}")
+            continue
+        roteiros.append(s)
+        try:
+            pcm += voz(s, i) + silencio
+            time.sleep(8)  # respiro entre chamadas, por causa dos limites da cota gratuita
+        except Exception as e:
+            print(f"[aviso] {e}")
+    if not roteiros:
+        sys.exit("Nenhum roteiro gerado; podcast ignorado.")
     try:
-        arq = para_arquivo(voz(script))
+        if not pcm:
+            raise RuntimeError("nenhum bloco virou áudio")
+        arq = para_arquivo(pcm)
         metodo, campo = ("sendAudio", "audio") if arq.endswith(".mp3") else ("sendDocument", "document")
-        telegram(metodo, {"chat_id": CHAT, "title": "Morning Podcast", "caption": "Your morning podcast"}, (campo, arq))
-        print("Podcast enviado.")
+        telegram(metodo, {"chat_id": CHAT, "title": "Morning Podcast", "performer": "The Morning Paper",
+                          "caption": "Your morning podcast"}, (campo, arq))
+        print(f"Podcast enviado (~{len(pcm) // 48000 // 60} min).")
     except Exception as e:
         print(f"[aviso] áudio falhou ({e}); enviando só o roteiro.")
-        for i in range(0, len(script), 3900):
-            telegram("sendMessage", {"chat_id": CHAT, "text": script[i:i + 3900]})
+        texto_final = "\n".join(roteiros)
+        for k in range(0, len(texto_final), 3900):
+            telegram("sendMessage", {"chat_id": CHAT, "text": texto_final[k:k + 3900]})
 
 
 if __name__ == "__main__":
