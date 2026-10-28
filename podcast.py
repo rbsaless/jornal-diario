@@ -7,7 +7,9 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 CHAVE = os.environ["GEMINI_API_KEY"].strip()
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"].strip()
 CHAT = os.environ["TELEGRAM_CHAT_ID"].strip()
-N_NOTICIAS = 20
+N_NOTICIAS = 20  # notícias contadas em detalhe
+N_RAPIDAS = 30  # notícias do 'lightning round' (as próximas do ranking)
+N_OUTRAS = 15  # manchetes extras só citadas
 N_BLOCOS = 3  # 3 blocos de ~550 palavras = ~10 minutos
 MODELOS_TEXTO = [m for m in [os.environ.get("GEMINI_MODEL"), "gemini-flash-lite-latest",
                              "gemini-3.5-flash-lite", "gemini-3.8-flash"] if m]
@@ -44,21 +46,46 @@ def chamar(modelo, corpo, t=180):
         return json.load(r)["candidates"][0]["content"]["parts"][0]
 
 
-def roteiro(itens, i, n):
-    if i == 0:
-        regra = ("Alex must open with exactly this sentence: 'This is The Morning Paper report.' "
-                 "Then go straight into the stories, with no other greeting or small talk. ")
+def carregar():
+    """Usa docs/noticias.json (ranqueado, todas as seções); se não existir, cai no index.html."""
+    try:
+        dados = json.load(open(os.path.join(RAIZ, "docs", "noticias.json"), encoding="utf-8"))
+        itens = dados["itens"]
+        principais = [f'- {i["t"]}. ' + (i.get("d") or i["r"]).replace("\n", " ")[:700] for i in itens[:N_NOTICIAS]]
+        rapidas = [f'- [{i["s"]}] {i["t"]}. {i["r"][:200]}' for i in itens[N_NOTICIAS:N_NOTICIAS + N_RAPIDAS]]
+        outras = [f'- {o["t"]} ({o["f"]})' for o in dados.get("outras", [])[:N_OUTRAS]]
+        print(f"noticias.json: {len(itens)} notícias; rápidas: {len(rapidas)}; manchetes extras: {len(outras)}")
+        return principais, rapidas, outras
+    except Exception as e:
+        print(f"[aviso] sem noticias.json ({e}); usando o index.html")
+        return noticias(), [], []
+
+
+def roteiro(b, i, n):
+    if b["rapido"]:
+        pedido = ("Write the final 'lightning round' segment of a casual two-host news podcast, in English, at least 450 words. "
+                  "Hosts: Alex and Sam. This segment continues an episode already in progress: do NOT greet and do NOT introduce the show; "
+                  "start with a short natural transition. Cover EVERY story in STORIES in one or two short sentences each, grouped by topic, "
+                  "with high energy and almost no banter; stay faithful to the facts, invent nothing. "
+                  + ("Then say 'And in other headlines' and mention each item in OTHER HEADLINES in a few words. " if b["outras"] else "")
+                  + "End with a short sign-off from both hosts. "
+                  "Format STRICTLY as lines starting with 'Alex:' or 'Sam:' and nothing else.\n\nSTORIES:\n" + "\n".join(b["itens"])
+                  + ("\n\nOTHER HEADLINES:\n" + "\n".join(b["outras"]) if b["outras"] else ""))
     else:
-        regra = ("This is a continuation of an episode already in progress: do NOT greet, do NOT introduce the show. "
-                 "Start with a short natural transition into the next stories. ")
-    fim = ("End with a short sign-off from both hosts. " if i == n - 1
-           else "Do NOT close or sign off; the episode continues after this part. ")
-    pedido = ("Write a casual two-host news podcast script in English, at least 550 words (about 3 to 4 minutes when spoken). "
-              "Hosts: Alex and Sam. Short sentences, natural reactions, light banter, no emojis. "
-              "Cover EVERY story below with real detail (who, what, where, why it matters), grouping related ones; "
-              "stay faithful to the facts, invent nothing. " + regra + fim +
-              "Format STRICTLY as lines starting with 'Alex:' or 'Sam:' and nothing else.\n\nSTORIES:\n"
-              + "\n".join(itens))
+        if i == 0:
+            regra = ("Alex must open with exactly this sentence: 'This is The Morning Paper report.' "
+                     "Then go straight into the stories, with no other greeting or small talk. ")
+        else:
+            regra = ("This is a continuation of an episode already in progress: do NOT greet, do NOT introduce the show. "
+                     "Start with a short natural transition into the next stories. ")
+        pedido = ("Write a casual two-host news podcast script in English, at least 550 words (about 3 to 4 minutes when spoken). "
+                  "Hosts: Alex and Sam. Short sentences, natural reactions, light banter, no emojis. "
+                  "Cover EVERY story below with real detail (who, what, where, why it matters), grouping related ones; "
+                  "stay faithful to the facts, invent nothing. " + regra +
+                  ("End with a short sign-off from both hosts. " if i == n - 1
+                   else "Do NOT close or sign off; the episode continues after this part. ") +
+                  "Format STRICTLY as lines starting with 'Alex:' or 'Sam:' and nothing else.\n\nSTORIES:\n"
+                  + "\n".join(b["itens"]))
     for m in MODELOS_TEXTO:
         try:
             t = chamar(m, {"contents": [{"parts": [{"text": pedido}]}],
@@ -123,11 +150,13 @@ def telegram(metodo, campos, arquivo=None):
 
 
 def main():
-    itens = noticias()
-    if len(itens) < 3:
-        sys.exit("Poucas notícias no index.html; podcast ignorado.")
-    tam = -(-len(itens) // N_BLOCOS)
-    blocos = [itens[k:k + tam] for k in range(0, len(itens), tam)]
+    principais, rapidas, outras = carregar()
+    if len(principais) < 3:
+        sys.exit("Poucas notícias; podcast ignorado.")
+    tam = -(-len(principais) // N_BLOCOS)
+    blocos = [{"itens": principais[k:k + tam], "outras": [], "rapido": False} for k in range(0, len(principais), tam)]
+    if rapidas or outras:
+        blocos.append({"itens": rapidas, "outras": outras, "rapido": True})
     roteiros, pcm, silencio = [], b"", b"\x00" * int(24000 * 2 * 0.7)
     for i, b in enumerate(blocos):
         try:
