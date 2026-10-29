@@ -19,7 +19,8 @@
       "nome": "ge",
       "url": "https://pox.globo.com/rss/ge/",
       "plano_b": "https://ge.globo.com/",
-      "max": 30
+      "max": 30,
+      "obrigatorias": 10
     },
     {
       "nome": "Fox News",
