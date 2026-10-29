@@ -380,13 +380,13 @@ main{max-width:1380px;padding-top:28px}
 .cl{position:relative;cursor:pointer}
 .ph{overflow:hidden;aspect-ratio:3/2;margin-bottom:12px;background:linear-gradient(135deg,#94a3b8,#475569)}
 .ph img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.9) contrast(1.05)}
-.hero .ph{aspect-ratio:16/10}
+.centro .ph{aspect-ratio:16/10}
 .kick{font:800 .7rem SANS;letter-spacing:.12em;text-transform:uppercase;color:var(--cor)}
 .cl h2{font:900 clamp(2rem,3.6vw,3.2rem)/1.05 "Playfair Display",Georgia,serif;margin:.2em 0 .3em}
 .cl h3{font:700 1.25rem/1.2 "Playfair Display",Georgia,serif;margin:.25em 0 .3em}
 .cl p{margin:.3em 0;color:var(--suave)}
 .cl small{font:600 .72rem SANS;color:var(--suave);text-transform:uppercase;letter-spacing:.06em}
-.hero p{font-size:1.2rem;font-style:italic}
+.centro p{font-size:1.2rem;font-style:italic}
 .side .cl{padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--linha)}.side .cl:last-child{border:0}
 .h3a::after{content:"";position:absolute;inset:0}
 .rule{display:flex;align-items:center;gap:16px;margin:38px 0 22px;font:800 .8rem SANS;letter-spacing:.14em;text-transform:uppercase}
@@ -684,7 +684,7 @@ def pagina(itens, agora, todas=None):
     capa = itens
     esq, dir_ = capa[1:5], capa[5:8]
     topo = ('<div class="front"><div class="side">' + "".join(cl_art(i, img=False) for i in esq)
-            + '</div><div class="hero">' + cl_art(capa[0], "h2", extra="hero")
+            + '</div><div class="centro">' + cl_art(capa[0], "h2", extra="centro")
             + '</div><div class="side">' + "".join(cl_art(i, img=(k == 0), resumo=(k != 0)) for k, i in enumerate(dir_)) + '</div></div>')
     if capa[8:]:
         topo += f'<div class="rule">More stories</div><div class="cols">' + "".join(cl_art(i) for i in capa[8:]) + '</div>'
