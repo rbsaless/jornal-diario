@@ -215,7 +215,7 @@ ALIAS = {"brasil": "Brazil", "politica": "Politics", "mundo": "World", "economia
 SECOES = {"politics": "#1D4ED8", "world": "#0F766E", "economy": "#15803D", "sports": "#C2410C",
           "technology": "#6D28D9", "health": "#BE185D", "brazil": "#A16207", "culture": "#7E22CE",
           "science": "#0E7490", "space": "#3730A3", "koreas": "#A21CAF", "video": "#B91C1C"}
-SANS = '"Libre Franklin",system-ui,-apple-system,"Segoe UI",sans-serif'
+SANS = '"Inter",system-ui,-apple-system,"Segoe UI",sans-serif'
 DARK = ("--fundo:#0B1220;--cartao:#121B2E;--tinta:#E8EDF6;--suave:#9AA7BC;--linha:#233049;--marca:#070D1A;"
         "--marca2:#0E2347;--sombra:0 1px 2px rgba(0,0,0,.35);--alta:0 12px 30px rgba(0,0,0,.5);color-scheme:dark")
 
@@ -356,134 +356,47 @@ h1{font-weight:800;letter-spacing:-.04em}
 .fonte-card details{border-top:1px solid var(--linha);margin-top:4px}
 .fonte-card summary{cursor:pointer;padding:12px 0 4px;font:700 .88rem SANS;color:var(--cor)}
 @media(max-width:520px){.fontes-grade{grid-template-columns:1fr}}
-:root{--fundo:#F3EEE3;--cartao:#F3EEE3;--tinta:#1B1A17;--suave:#6b6558;--linha:#b9b2a2;--alerta:#8B1E1E;--sombra:none}
-:root[data-theme="dark"]{--fundo:#16140f;--cartao:#1d1a14;--tinta:#EDE6D6;--suave:#a39c8a;--linha:#4a4538;--alerta:#e0675f}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--fundo:#16140f;--cartao:#1d1a14;--tinta:#EDE6D6;--suave:#a39c8a;--linha:#4a4538;--alerta:#e0675f}}
-body{font:17px/1.55 "Source Serif 4",Georgia,serif}
-.topo{background:none;color:var(--tinta);border:0}
-.cab{max-width:1380px;margin:0 auto;padding:0 clamp(16px,3vw,44px)}
-.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;font:600 .78rem SANS;letter-spacing:.08em;text-transform:uppercase;padding:14px 0;border-bottom:1px solid var(--tinta)}
-.bar span:nth-child(2){margin-left:auto}
-.tema{width:30px;height:30px;border-radius:50%;border:1px solid var(--tinta);background:none;color:var(--tinta);cursor:pointer}
-h1{font:900 clamp(2.6rem,8vw,6rem)/1 "Playfair Display",Georgia,serif;text-align:center;margin:.25em 0 .1em;letter-spacing:-.01em}
-.sub{text-align:center;font-style:italic;color:var(--suave);margin-bottom:14px}
-.abas{background:var(--fundo)}
-.abas-in{max-width:1380px;justify-content:center;flex-wrap:wrap;overflow:visible;gap:6px 26px;border-top:3px double var(--tinta);border-bottom:1px solid var(--tinta);padding:11px clamp(16px,3vw,44px)}
-.aba{border:0;border-radius:0;background:none;padding:2px 0;font:700 .78rem SANS;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;color:var(--tinta)}
+:root{--fundo:#fff;--cartao:#fff;--tinta:#111;--suave:#555;--linha:#e5e5e5;--alerta:#e11d48;--sombra:none}
+.topo{border-bottom:3px solid var(--tinta)}
+.faixa{padding-bottom:14px}
+h1{font:800 clamp(1.7rem,4vw,2.4rem)/1 SANS;letter-spacing:-.04em}
+h1::after{content:".";color:var(--alerta)}
+.abas{border-bottom:1px solid var(--linha)}
+.aba{border:0;border-radius:0;background:none;padding:10px 4px;margin-right:14px;font:600 .85rem SANS;border-bottom:2px solid transparent}
 .aba:hover{border-color:var(--alerta)}
 .aba[aria-selected="true"]{background:none;color:var(--alerta);border-color:var(--alerta)}
-.ponto,.n{display:none}
-main{max-width:1380px;padding-top:28px}
-.front{display:grid;grid-template-columns:1fr 2.2fr 1fr;margin-bottom:10px}
-.front>div{padding:0 26px}.front>div:first-child{padding-left:0}.front>div:last-child{padding-right:0}
-.front>div+div{border-left:1px solid var(--linha)}
-.cl{position:relative;cursor:pointer}
-.ph{overflow:hidden;aspect-ratio:3/2;margin-bottom:12px;background:linear-gradient(135deg,#94a3b8,#475569)}
-.ph img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.9) contrast(1.05)}
-.centro .ph{aspect-ratio:16/10}
-.kick{font:800 .7rem SANS;letter-spacing:.12em;text-transform:uppercase;color:var(--cor)}
-.cl h2{font:900 clamp(2rem,3.6vw,3.2rem)/1.05 "Playfair Display",Georgia,serif;margin:.2em 0 .3em}
-.cl h3{font:700 1.25rem/1.2 "Playfair Display",Georgia,serif;margin:.25em 0 .3em}
-.cl p{margin:.3em 0;color:var(--suave)}
-.cl small{font:600 .72rem SANS;color:var(--suave);text-transform:uppercase;letter-spacing:.06em}
-.centro p{font-size:1.2rem;font-style:italic}
-.side .cl{padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--linha)}.side .cl:last-child{border:0}
+.ponto{display:none}
+.pilula{border-radius:4px;background:none;font-weight:600}
+main{padding-top:28px}
+.k{font:800 .72rem SANS;color:var(--alerta);text-transform:uppercase;letter-spacing:.04em}
+.meta{font:600 .78rem SANS;color:var(--suave)}
+.ed-top{display:grid;grid-template-columns:2fr 1fr;gap:36px;margin-bottom:44px}
+.ed-hero,.cd,.row{position:relative;cursor:pointer}
+.im{overflow:hidden;border-radius:6px;background:linear-gradient(135deg,var(--cor),#0f172a)}
+.im img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.ed-hero:hover .im img,.cd:hover .im img{transform:scale(1.04)}
+.ed-hero .im{aspect-ratio:16/9}
+.ed-hero h2{font:800 clamp(1.9rem,3.6vw,2.8rem)/1.08 SANS;letter-spacing:-.03em;margin:14px 0 10px}
+.ed-hero p{color:var(--suave);font-size:1.15rem;line-height:1.55;margin:0 0 10px}
+.row{display:grid;grid-template-columns:96px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--linha)}
+.row.sem{grid-template-columns:1fr}
+.row .im{aspect-ratio:1}
+.row h3{font:700 1.02rem/1.28 SANS;margin:3px 0 4px;letter-spacing:-.01em}
+.ed-lado .row:first-child{padding-top:0}
+.sec-ed{font:800 1.3rem SANS;border-top:3px solid var(--tinta);padding-top:10px;margin:0 0 20px;display:flex;justify-content:space-between;align-items:baseline}
+.sec-ed span{font:600 .85rem SANS;color:var(--suave)}
+.grade-ed{display:grid;grid-template-columns:repeat(3,1fr);gap:30px 26px;margin-bottom:44px}
+.cd .im{aspect-ratio:16/10;margin-bottom:10px}
+.cd h3{font:700 1.2rem/1.25 SANS;letter-spacing:-.015em;margin:4px 0 6px}
+.cd p{color:var(--suave);font-size:.98rem;line-height:1.5;margin:0 0 8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.lista-ed{display:grid;grid-template-columns:repeat(2,1fr);column-gap:40px}
+:root[data-theme="dark"]{--fundo:#0B1220;--cartao:#121B2E;--tinta:#E8EDF6;--suave:#9AA7BC;--linha:#233049;--alerta:#fb4a6b}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--fundo:#0B1220;--cartao:#121B2E;--tinta:#E8EDF6;--suave:#9AA7BC;--linha:#233049;--alerta:#fb4a6b}}
+
 .h3a::after{content:"";position:absolute;inset:0}
-.rule{display:flex;align-items:center;gap:16px;margin:38px 0 22px;font:800 .8rem SANS;letter-spacing:.14em;text-transform:uppercase}
-.rule:before,.rule:after{content:"";flex:1;border-top:1px solid var(--tinta)}
-.cols{column-count:4;column-gap:34px;column-rule:1px solid var(--linha)}
-.cols .cl{break-inside:avoid;padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid var(--linha)}
-.cab-secao{border-left:0;padding:0;justify-content:center;margin-bottom:6px}
-.cab-secao h2{font:900 clamp(2rem,4vw,3rem)/1.1 "Playfair Display",Georgia,serif}
-@media(max-width:1000px){.front{grid-template-columns:1fr}.front>div{padding:0!important;border:0!important;margin-bottom:26px}.cols{column-count:2}}
-@media(max-width:560px){.cols{column-count:1}.abas-in{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start}}
-
-.placar{margin:0 0 34px;border-top:3px solid var(--tinta);border-bottom:1px solid var(--linha);padding:14px 0 6px}
-.pl-topo{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
-.pl-topo h3{font:900 1.5rem "Playfair Display",Georgia,serif;margin:0;flex:1}
-.pl-hora{font:600 .75rem SANS;color:var(--suave);text-transform:uppercase;letter-spacing:.06em}
-.pl-btn{font:700 .72rem SANS;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--tinta);background:none;color:var(--tinta);padding:5px 10px;cursor:pointer}
-.pl-liga{font:800 .72rem SANS;letter-spacing:.12em;text-transform:uppercase;color:var(--alerta);margin:16px 0 6px}
-.pl-grade{display:grid;grid-template-columns:repeat(2,1fr);column-gap:36px}
-.pl-j{display:grid;grid-template-columns:1fr 78px;align-items:center;padding:12px 0;border-bottom:1px solid var(--linha)}
-.pl-t{display:flex;align-items:center;gap:10px;padding:3px 0;font:600 .98rem SANS}
-.pl-t img{width:22px;height:22px;object-fit:contain}
-.pl-t span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pl-t b{font:800 1rem SANS;min-width:1.2em;text-align:right}
-.pl-s{text-align:center;border-left:1px solid var(--linha);font:700 .8rem/1.3 SANS;color:var(--suave)}
-.pl-s.vivo{color:#16a34a}.pl-s.vivo::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a;margin-right:5px;animation:pl 1.2s infinite}
-@keyframes pl{50%{opacity:.25}}
-.pl-msg{padding:14px 0;color:var(--suave);font-style:italic}
-.pl-fonte{font:500 .7rem SANS;color:var(--suave);padding:10px 0 4px}
-@media(max-width:760px){.pl-grade{grid-template-columns:1fr}}
+@media(max-width:900px){.ed-top{grid-template-columns:1fr}.grade-ed{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grade-ed,.lista-ed{grid-template-columns:1fr}}
 """.replace("@@DARK@@", DARK).replace("SANS", SANS)
-
-PLACAR_JS = r"""
-(function(){
-var box=document.getElementById('placar');if(!box)return;
-var LIGAS=[["bra.1","Brasileirão Série A"],["conmebol.libertadores","Copa Libertadores"],["bra.copa_do_brazil","Copa do Brasil"],
-["eng.1","Premier League"],["esp.1","La Liga"],["ita.1","Serie A"],["ger.1","Bundesliga"],["fra.1","Ligue 1"],["jpn.1","J1 League"],["kor.1","K League 1"]];
-var BASE="https://site.api.espn.com/apis/site/v2/sports/soccer/",TZ="America/Sao_Paulo";
-var corpo=box.querySelector(".pl-corpo"),hora=box.querySelector(".pl-hora"),btn=box.querySelector(".pl-btn"),ultimo=0,busy=false;
-function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
-function ymd(dt){return new Intl.DateTimeFormat("en-CA",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(dt)}
-function hhmm(dt){return new Intl.DateTimeFormat("pt-BR",{timeZone:TZ,hour:"2-digit",minute:"2-digit",hour12:false}).format(dt)}
-function buscar(l,d1,d2){
- var c=new AbortController(),t=setTimeout(function(){c.abort()},9000);
- return fetch(BASE+l[0]+"/scoreboard?dates="+d1+"-"+d2+"&limit=100",{cache:"no-store",signal:c.signal})
-  .then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})
-  .then(function(j){clearTimeout(t);return{liga:l[1],ok:true,ev:j.events||[]}})
-  .catch(function(e){clearTimeout(t);return{liga:l[1],ok:false,ev:[]}})}
-function norm(ev,hoje,amanha){
- var c=(ev.competitions&&ev.competitions[0])||{},cs=c.competitors||[],h,a,i;
- for(i=0;i<cs.length;i++){if(cs[i].homeAway==="home")h=cs[i];if(cs[i].homeAway==="away")a=cs[i]}
- if(!h||!a||!h.team||!a.team)return null;
- var st=ev.status||c.status||{},ty=st.type||{},dt=new Date(ev.date),dia=ymd(dt),estado=ty.state||"pre",nome=ty.name||"";
- if(estado!=="in"&&dia!==hoje&&dia!==amanha)return null;
- var txt,vivo=false;
- if(estado==="in"){vivo=true;txt=nome==="STATUS_HALFTIME"?"HT":(st.displayClock||ty.shortDetail||"Live")}
- else if(estado==="post"){txt=/POSTPONED/.test(nome)?"Postponed":/CANCEL/.test(nome)?"Cancelled":"FT"}
- else txt=(dia===hoje?"Today":"Tomorrow")+"\n"+hhmm(dt);
- var mk=function(x){return{n:x.team.shortDisplayName||x.team.displayName||"?",l:x.team.logo||"",s:x.score}};
- return{ts:dt,estado:estado,vivo:vivo,txt:txt,h:mk(h),a:mk(a),
-  peso:estado==="in"?0:(estado==="pre"?1:2),placar:estado!=="pre"}}
-function linha(t,placar){
- var r=el("div","pl-t");
- if(t.l){var im=el("img");im.src=t.l;im.alt="";im.loading="lazy";im.onerror=function(){im.remove()};r.appendChild(im)}
- r.appendChild(el("span",null,t.n));
- if(placar)r.appendChild(el("b",null,t.s==null?"0":String(t.s)));
- return r}
-function desenhar(res,hoje,amanha){
- corpo.textContent="";var ok=res.filter(function(r){return r.ok}),total=0;
- if(!ok.length){corpo.appendChild(el("div","pl-msg","Live scores are unavailable right now. Try again in a moment."));return false}
- res.forEach(function(r){
-  var js=r.ev.map(function(e){return norm(e,hoje,amanha)}).filter(Boolean);
-  if(!js.length)return;
-  js.sort(function(x,y){return x.peso-y.peso||x.ts-y.ts});total+=js.length;
-  corpo.appendChild(el("div","pl-liga",r.liga));
-  var g=el("div","pl-grade");
-  js.forEach(function(m){
-   var j=el("div","pl-j"),eq=el("div");eq.appendChild(linha(m.h,m.placar));eq.appendChild(linha(m.a,m.placar));
-   var s=el("div","pl-s"+(m.vivo?" vivo":""));
-   m.txt.split("\n").forEach(function(p,i){if(i)s.appendChild(el("br"));s.appendChild(document.createTextNode(p))});
-   j.appendChild(eq);j.appendChild(s);g.appendChild(j)});
-  corpo.appendChild(g)});
- if(!total)corpo.appendChild(el("div","pl-msg","No matches today or tomorrow in these competitions."));
- return true}
-function carregar(){
- if(busy||Date.now()-ultimo<15000)return;busy=true;btn.disabled=true;
- var agora=new Date(),hoje=ymd(agora),amanha=ymd(new Date(agora.getTime()+864e5)),ontem=ymd(new Date(agora.getTime()-864e5));
- Promise.all(LIGAS.map(function(l){return buscar(l,ontem.replace(/-/g,""),amanha.replace(/-/g,""))})).then(function(res){
-  if(desenhar(res,hoje,amanha)){hora.textContent="Updated "+hhmm(new Date())}
-  ultimo=Date.now();busy=false;btn.disabled=false});
-}
-btn.onclick=function(){ultimo=0;carregar()};
-var p=box.closest(".painel"),aba=p&&document.getElementById(p.getAttribute("aria-labelledby"));
-if(aba)aba.addEventListener("click",function(){carregar()});
-setInterval(function(){if(document.hidden)return;if(p&&p.offsetParent===null)return;carregar()},60000);
-carregar();
-})();
-"""
 
 JS = """
 (function(){
@@ -630,24 +543,39 @@ def tile(it, extra="", longo=False):
             f'<h3><a href="{esc(it["link"])}">{esc(it["titulo"])}</a></h3>{p}<small>{esc(it["fonte"])}{hora}</small></div></article>')
 
 
-def cl_art(it, tag="h3", img=True, resumo=True, extra=""):
-    ph = f'<div class="ph">{foto(it)}</div>' if (img and it.get("imagem")) else ""
+def im(it, cls="im"):
+    return f'<div class="{cls}">{foto(it)}</div>' if it.get("imagem") else ""
+
+
+def meta(it):
     hora = f' · {esc(it["hora"])}' if it.get("hora") else ""
-    p = f'<p>{esc(it["resumo"])}</p>' if resumo else ""
-    return (f'<article class="cl {extra}" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">{ph}'
-            f'<span class="kick">{esc(it["secao"])}</span><{tag}><a class="h3a" href="{esc(it["link"])}">{esc(it["titulo"])}</a></{tag}>'
-            f'{p}<small>{esc(it["fonte"])}{hora}</small></article>')
+    return f'<div class="meta">{esc(it["fonte"])}{hora}</div>'
+
+
+def ed_hero(it):
+    return (f'<article class="ed-hero" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">'
+            f'<div class="im">{foto(it)}</div><div class="k" style="margin-top:14px">{esc(it["secao"])}</div>'
+            f'<h2><a class="h3a" href="{esc(it["link"])}">{esc(it["titulo"])}</a></h2><p>{esc(it["resumo"])}</p>{meta(it)}</article>')
+
+
+def ed_row(it):
+    sem = "" if it.get("imagem") else " sem"
+    return (f'<article class="row{sem}" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">{im(it)}'
+            f'<div><div class="k">{esc(it["secao"])}</div><h3><a class="h3a" href="{esc(it["link"])}">{esc(it["titulo"])}</a></h3>{meta(it)}</div></article>')
+
+
+def ed_card(it):
+    return (f'<article class="cd" style="--cor:{cor(it["secao"])}" data-i="{it["_i"]}">{im(it)}'
+            f'<div class="k">{esc(it["secao"])}</div><h3><a class="h3a" href="{esc(it["link"])}">{esc(it["titulo"])}</a></h3>'
+            f'<p>{esc(it["resumo"])}</p>{meta(it)}</article>')
 
 
 def painel_secao(nome, lista):
     id_ = sem_acento(nome)
-    cards = "".join(cl_art(i) for i in lista)
-    placar = ('<div class="placar" id="placar"><div class="pl-topo"><h3>Live scores</h3><span class="pl-hora"></span>'
-              '<button class="pl-btn" type="button">Refresh</button></div><div class="pl-corpo"><div class="pl-msg">Loading matches&hellip;</div></div>'
-              '<div class="pl-fonte">Brasileir&atilde;o &middot; Libertadores &middot; Copa do Brasil &middot; Europe&rsquo;s top leagues &middot; J1 &middot; K League. Times in Bras&iacute;lia. Data: ESPN public scoreboard.</div></div>') if nome == "Sports" else ""
+    cards = "".join(ed_card(i) for i in lista)
     return (f'<section class="painel" id="p-{id_}" role="tabpanel" aria-labelledby="aba-{id_}" style="--cor:{cor(nome)}">'
             f'<div class="cab-secao"><h2>{esc(nome)}</h2><span>{len(lista)} {"story" if len(lista) == 1 else "stories"}</span></div>'
-            f'{placar}<div class="cols">{cards}</div></section>')
+            f'<div class="grade-ed">{cards}</div></section>')
 
 
 def painel_todas(todas, agora):
@@ -682,12 +610,12 @@ def pagina(itens, agora, todas=None):
     capa = itens[:OPC["total_itens"]]
     minutos = max(1, round(sum(len((i["titulo"] + " " + i["resumo"]).split()) for i in capa) / 200))
     capa = itens
-    esq, dir_ = capa[1:5], capa[5:8]
-    topo = ('<div class="front"><div class="side">' + "".join(cl_art(i, img=False) for i in esq)
-            + '</div><div class="centro">' + cl_art(capa[0], "h2", extra="centro")
-            + '</div><div class="side">' + "".join(cl_art(i, img=(k == 0), resumo=(k != 0)) for k, i in enumerate(dir_)) + '</div></div>')
-    if capa[8:]:
-        topo += f'<div class="rule">More stories</div><div class="cols">' + "".join(cl_art(i) for i in capa[8:]) + '</div>'
+    topo = (f'<div class="ed-top">{ed_hero(capa[0])}<div class="ed-lado">' + "".join(ed_row(i) for i in capa[1:6]) + '</div></div>')
+    if capa[6:18]:
+        topo += '<div class="sec-ed">Top stories</div><div class="grade-ed">' + "".join(ed_card(i) for i in capa[6:18]) + '</div>'
+    if capa[18:]:
+        topo += (f'<div class="sec-ed">More stories<span>{len(capa) - 18} more</span></div>'
+                 '<div class="lista-ed">' + "".join(ed_row(i) for i in capa[18:]) + '</div>')
     grade = ""
     grupos = {n: [i for i in itens if i["secao"] == n] for n in ORDEM}
     grupos = {n: l for n, l in grupos.items() if l}
@@ -702,17 +630,17 @@ def pagina(itens, agora, todas=None):
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark">
 <title>{esc(OPC["titulo"])} – {quando}</title>
 <script>document.documentElement.className="js";try{{var v=localStorage.getItem("jm-tema");if(v)document.documentElement.setAttribute("data-theme",v)}}catch(e){{}}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700;800&family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Source+Serif+4:wght@400;600&display=swap">
 <style>{CSS}</style></head><body>
-<header class="topo"><div class="cab"><div class="bar"><span>{quando}</span><span>Daily edition &middot; {len(itens)} stories &middot; {minutos} min</span>
-<button class="tema" id="tema" type="button" aria-label="Switch between light and dark theme">&#9680;</button></div>
-<h1>{esc(OPC["titulo"])}</h1><div class="sub">Everything that mattered while you slept</div></div></header>
+<header class="topo"><div class="faixa"><div><h1>{esc(OPC["titulo"])}</h1><span class="data">{quando}</span></div>
+<div class="metas"><span class="pilula">{len(itens)} stories</span><span class="pilula">{minutos} min front page</span>
+<button class="tema" id="tema" type="button" aria-label="Switch between light and dark theme">&#9680;</button></div></div></header>
 <nav class="abas" aria-label="Sections"><div class="abas-in" role="tablist">{abas}</div></nav>
 <main>{paineis}</main>
 <footer>Edition assembled at {agora:%H:%M} (Brasília time) with Gemini summaries. Always check the original source.</footer>
 {LEITOR}
 <script type="application/json" id="dados">{dados_json}</script>
-<script>{JS}</script><script>{PLACAR_JS}</script></body></html>"""
+<script>{JS}</script></body></html>"""
 
 
 def main():
@@ -754,11 +682,10 @@ def main():
         sys.exit("O Gemini devolveu itens de menos; a edição anterior continua no ar.")
     # manchetes obrigatórias: as N mais recentes de cada fonte entram sempre
     n_obrig, contagem, obrig = OPC.get("obrigatorias_por_fonte", 2), {}, []
-    n_src = {f["nome"]: max(f.get("obrigatorias", 0), 0) or n_obrig for f in CFG["fontes"]}
     ids_final = {i["id"] for i in finais}
     for it in principais:
         contagem[it["src"]] = contagem.get(it["src"], 0) + 1
-        if contagem[it["src"]] <= n_src.get(it["src"], n_obrig) and it["id"] not in ids_final:
+        if contagem[it["src"]] <= n_obrig and it["id"] not in ids_final:
             obrig.append(it)
     obrig_ids = {i["id"] for i in obrig}
     resto = [i for i in coletados if i["id"] not in ids_final and i["id"] not in obrig_ids]
