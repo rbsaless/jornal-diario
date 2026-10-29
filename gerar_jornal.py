@@ -754,10 +754,11 @@ def main():
         sys.exit("O Gemini devolveu itens de menos; a edição anterior continua no ar.")
     # manchetes obrigatórias: as N mais recentes de cada fonte entram sempre
     n_obrig, contagem, obrig = OPC.get("obrigatorias_por_fonte", 2), {}, []
+    n_src = {f["nome"]: max(f.get("obrigatorias", 0), 0) or n_obrig for f in CFG["fontes"]}
     ids_final = {i["id"] for i in finais}
     for it in principais:
         contagem[it["src"]] = contagem.get(it["src"], 0) + 1
-        if contagem[it["src"]] <= n_obrig and it["id"] not in ids_final:
+        if contagem[it["src"]] <= n_src.get(it["src"], n_obrig) and it["id"] not in ids_final:
             obrig.append(it)
     obrig_ids = {i["id"] for i in obrig}
     resto = [i for i in coletados if i["id"] not in ids_final and i["id"] not in obrig_ids]
