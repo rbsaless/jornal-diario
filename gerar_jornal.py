@@ -176,7 +176,18 @@ STORIES:
 {linhas}"""
 
 
-PT = re.compile(r"[ãõçáéíóúâêôà]| (de|do|da|dos|das|em|para|com|que|uma|não|após|sobre|após|pelo|pela) ", re.I)
+PT = re.compile(r"[ãõçáéíóúâêôà]| (de|do|da|dos|das|em|para|com|que|uma|não|após|sobre|pelo|pela) ", re.I)
+
+
+def prompt_editorial(itens):
+    linhas = "\n".join(f'[{i["id"]}] ({i["fonte"]}) {i["titulo"]} :: {i.get("detalhe") or i.get("texto") or i["resumo"]}' for i in itens)
+    return f"""You are the opinion editor of a daily English-language newspaper. For each story below, write "editorial": an analysis piece of 160 to 230 words in English, as 3 short paragraphs separated by a blank line.
+Paragraph 1: the context. Paragraph 2: why it matters and who is affected. Paragraph 3: what to watch next.
+Use ONLY facts that appear in the provided text; never invent numbers, quotes or events. Where you go beyond the facts, make it clear it is analysis ("This suggests...", "One risk is..."). Keep a confident, sober editorial voice; no insults, no slogans.
+Reply ONLY with JSON: {{"itens":[{{"id":0,"editorial":"..."}}]}}
+
+STORIES:
+{linhas}"""
 
 
 def complementar(itens, obrig_ids, lote=30):
@@ -403,6 +414,11 @@ main{padding-top:28px}
 .h3a::after{content:"";position:absolute;inset:0}
 @media(max-width:900px){.ed-top{grid-template-columns:1fr}.grade-ed{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.grade-ed,.lista-ed{grid-template-columns:1fr}}
+.l-edit{margin:30px 0 0;padding:22px 26px;border-left:5px solid var(--cor,#D7263D);background:var(--cartao);border-radius:0 14px 14px 0}
+.l-edit[hidden]{display:none}
+.l-edit h4{font:800 .78rem SANS;letter-spacing:.12em;text-transform:uppercase;color:var(--cor,#D7263D);margin:0 0 12px}
+.l-edit p{font-size:1.15rem;line-height:1.7;margin:0 0 1.1rem;max-width:68ch}
+.l-edit .l-nota{font:500 .78rem/1.5 SANS;color:var(--suave);margin:0}
 """.replace("@@DARK@@", DARK).replace("SANS", SANS)
 
 JS = """
@@ -450,6 +466,9 @@ JS = """
   else f.hidden=true;
   var tx=q('.l-texto');tx.textContent='';
   (it.d||'').split(NL).filter(function(p){return p.trim()}).forEach(function(p){tx.appendChild(el('p','',p))});
+  var ed=q('.l-edit'),et=q('.l-edtexto');et.textContent='';
+  (it.e||'').split(NL).filter(function(p){return p.trim()}).forEach(function(p){et.appendChild(el('p','',p))});
+  ed.hidden=!it.e;
   q('#l-orig').href=it.l;
   var ls=q('#l-lista');ls.textContent='';var n=0;
   D.forEach(function(o,j){if(j!==+i&&o.s===it.s&&n<6){n++;var b=el('button','',o.t);b.type='button';b.appendChild(el('small','',o.f));b.addEventListener('click',function(){abrir(j)});ls.appendChild(b)}});
@@ -481,7 +500,7 @@ LEITOR = """<div class="leitor" id="leitor" role="dialog" aria-modal="true" aria
 <div class="l-fundo"></div>
 <div class="l-caixa">
 <div class="l-barra"><span class="chip l-secao"></span><div class="l-acoes"><a class="btn" id="l-orig" href="#" target="_blank" rel="noopener noreferrer">Read original &#8599;</a><button id="l-x" type="button" aria-label="Close">&#10005;</button></div></div>
-<div class="l-grade"><div class="l-main"><h2 id="l-tit"></h2><p class="l-deck"></p><div class="l-meta"></div><figure class="l-midia" hidden></figure><div class="l-texto"></div><p class="l-aviso">Summary written by AI from the source's feed. Read the original for the full story.</p></div>
+<div class="l-grade"><div class="l-main"><h2 id="l-tit"></h2><p class="l-deck"></p><div class="l-meta"></div><figure class="l-midia" hidden></figure><div class="l-texto"></div><section class="l-edit" hidden><h4>Editorial</h4><div class="l-edtexto"></div><p class="l-nota">Analysis written by AI from the facts in the source's feed. It reflects an editorial reading, not reporting. Read the original for the full story.</p></section><p class="l-aviso">Summary written by AI from the source's feed. Read the original for the full story.</p></div>
 <aside class="l-mais" hidden><h3>More in <span></span></h3><div id="l-lista"></div></aside></div>
 </div></div>"""
 
@@ -611,7 +630,7 @@ def pagina(itens, agora, todas=None):
     for n, it in enumerate(itens):
         it["_i"] = n
     dados = [{"t": i["titulo"], "r": i["resumo"], "d": i.get("detalhe") or "", "s": i["secao"], "c": cor(i["secao"]),
-              "f": i["fonte"], "h": i.get("hora", ""), "l": i["link"], "i": i.get("imagem", ""), "v": video_id(i)}
+              "f": i["fonte"], "h": i.get("hora", ""), "l": i["link"], "i": i.get("imagem", ""), "v": video_id(i), "e": i.get("editorial") or ""}
              for i in itens]
     dados_json = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028")
     capa = itens[:OPC["total_itens"]]
@@ -699,8 +718,7 @@ def main():
     extra = complementar(obrig + resto, obrig_ids)
     for it in obrig:
         e = extra.get(it["id"], {})
-        finais.append({**it, "titulo": e.get("titulo") or it["titulo"],
-                       "resumo": e.get("resumo") or (e.get("titulo") if PT.search(it["resumo"]) else it["resumo"][:240]),
+        finais.append({**it, "titulo": e.get("titulo") or it["titulo"], "resumo": e.get("resumo") or (e.get("titulo") if PT.search(it["resumo"]) else it["resumo"][:240]),
                        "secao": canonica(e.get("secao"))})
     titulos = {i["id"]: i["titulo"] for i in finais}
     for it in resto:
@@ -728,6 +746,21 @@ def main():
         print(f"[aviso] textos longos não gerados: {e}")
     for it in finais:
         it["detalhe"] = det.get(it["id"], "")
+    n_ed = max(0, min(int(OPC.get("editoriais", 3)), 3))
+    edit = {}
+    if n_ed:
+        try:
+            cand = [i for i in finais if not i.get("video")][:n_ed]
+            for e in gemini(prompt_editorial(cand)):
+                try:
+                    edit[int(re.sub(r"\D", "", str(e.get("id"))))] = (e.get("editorial") or "").strip()
+                except ValueError:
+                    pass
+            print(f"Editoriais gerados: {sum(1 for v in edit.values() if v)}")
+        except Exception as e:
+            print(f"[aviso] editoriais não gerados: {e}")
+    for it in finais:
+        it["editorial"] = edit.get(it["id"], "")
     agora = datetime.datetime.now(ZoneInfo("America/Sao_Paulo"))
     por_fonte = {}
     for it in coletados:
@@ -750,7 +783,7 @@ def main():
                 outras.append({"t": titulos[por_src[k][rodada]["id"]], "f": por_src[k][rodada]["fonte"]})
     saida = pagina(finais, agora, todas)
     os.makedirs(os.path.join(RAIZ, "docs"), exist_ok=True)
-    json.dump({"itens": [{"t": i["titulo"], "r": i["resumo"], "d": i.get("detalhe", ""), "s": i["secao"], "f": i["fonte"]}
+    json.dump({"itens": [{"t": i["titulo"], "r": i["resumo"], "d": i.get("detalhe", ""), "e": i.get("editorial", ""), "s": i["secao"], "f": i["fonte"]}
                          for i in finais], "outras": outras},
               open(os.path.join(RAIZ, "docs", "noticias.json"), "w", encoding="utf-8"), ensure_ascii=False)
     os.makedirs(os.path.join(RAIZ, "docs", "edicoes"), exist_ok=True)
