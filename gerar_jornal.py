@@ -176,14 +176,18 @@ STORIES:
 {linhas}"""
 
 
-def complementar(itens, obrig_ids, lote=90):
-    """Traduz títulos para inglês; para os itens obrigatórios, devolve também resumo e seção."""
-    res = {}
-    for k in range(0, len(itens), lote):
-        linhas = "\n".join(
-            f'[{i["id"]}] ({i["fonte"]}{", MUST" if i["id"] in obrig_ids else ""}) {i["titulo"]}'
-            + (f' :: {i["resumo"][:200]}' if i["id"] in obrig_ids else "") for i in itens[k:k + lote])
-        pedido = f"""You are a newspaper editor. Below are news items, one per line.
+PT = re.compile(r"[ãõçáéíóúâêôà]| (de|do|da|dos|das|em|para|com|que|uma|não|após|sobre|após|pelo|pela) ", re.I)
+
+
+def complementar(itens, obrig_ids, lote=30):
+    """Traduz títulos para inglês; obrigatórios recebem também resumo e seção. Repete o que falhou."""
+    res, pend = {}, list(itens)
+    for rodada in range(3):
+        for k in range(0, len(pend), lote):
+            linhas = "\n".join(
+                f'[{i["id"]}] ({i["fonte"]}{", MUST" if i["id"] in obrig_ids else ""}) {i["titulo"]}'
+                + (f' :: {i["resumo"][:200]}' if i["id"] in obrig_ids else "") for i in pend[k:k + lote])
+            pedido = f"""You are a newspaper editor. Below are news items, one per line.
 For every item whose headline is NOT already in English, return its id and "titulo": the headline translated to English (up to 90 characters, faithful, nothing invented).
 Items marked MUST are different: ALWAYS return them, with "titulo" (English, up to 90 characters), "resumo" (1 or 2 faithful sentences in English) and "secao" (exactly one of: {SECOES_VALIDAS}).
 Do not return English-language items that are not marked MUST.
@@ -191,14 +195,17 @@ Reply ONLY with JSON: {{"itens":[{{"id":0,"titulo":"...","resumo":"...","secao":
 
 ITEMS:
 {linhas}"""
-        try:
-            for e in gemini(pedido):
-                try:
-                    res[int(re.sub(r"\D", "", str(e.get("id"))))] = e
-                except ValueError:
-                    pass
-        except Exception as ex:
-            print(f"[aviso] complemento {k // lote + 1} falhou: {ex}")
+            try:
+                for e in gemini(pedido):
+                    try:
+                        res[int(re.sub(r"\D", "", str(e.get("id"))))] = e
+                    except ValueError:
+                        pass
+            except Exception as ex:
+                print(f"[aviso] complemento rodada {rodada + 1} lote {k // lote + 1} falhou: {ex}")
+        pend = [i for i in pend if i["id"] not in res and (i["id"] in obrig_ids or PT.search(i["titulo"]))]
+        if not pend:
+            break
     return res
 
 
@@ -692,7 +699,8 @@ def main():
     extra = complementar(obrig + resto, obrig_ids)
     for it in obrig:
         e = extra.get(it["id"], {})
-        finais.append({**it, "titulo": e.get("titulo") or it["titulo"], "resumo": e.get("resumo") or it["resumo"][:240],
+        finais.append({**it, "titulo": e.get("titulo") or it["titulo"],
+                       "resumo": e.get("resumo") or (e.get("titulo") if PT.search(it["resumo"]) else it["resumo"][:240]),
                        "secao": canonica(e.get("secao"))})
     titulos = {i["id"]: i["titulo"] for i in finais}
     for it in resto:
