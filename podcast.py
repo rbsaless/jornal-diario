@@ -10,12 +10,16 @@ CHAT = os.environ["TELEGRAM_CHAT_ID"].strip()
 N_NOTICIAS = 20  # notícias contadas em detalhe
 N_RAPIDAS = 30  # notícias do 'lightning round' (as próximas do ranking)
 N_OUTRAS = 15  # manchetes extras só citadas
+N_DEBATE = 3  # de 1 a 3 notícias para o debate (0 desliga)
 N_BLOCOS = 3  # 3 blocos de ~550 palavras = ~10 minutos
 MODELOS_TEXTO = [m for m in [os.environ.get("GEMINI_MODEL"), "gemini-flash-lite-latest",
                              "gemini-3.5-flash-lite", "gemini-3.8-flash"] if m]
 MODELOS_VOZ = [m for m in [os.environ.get("GEMINI_TTS_MODEL"), "gemini-2.5-flash-preview-tts",
                            "gemini-2.5-pro-preview-tts"] if m]
 VOZES = {"Alex": "Kore", "Sam": "Puck"}
+
+
+DEBATE = []
 
 
 def texto(s):
@@ -51,6 +55,9 @@ def carregar():
     try:
         dados = json.load(open(os.path.join(RAIZ, "docs", "noticias.json"), encoding="utf-8"))
         itens = dados["itens"]
+        global DEBATE
+        DEBATE = [f'- {i["t"]}. ' + (i.get("e") or i.get("d") or i["r"]).replace("\n", " ")[:1200]
+                  for i in [x for x in itens if x.get("s") != "Video"][:max(0, min(N_DEBATE, 3))]]
         principais = [f'- {i["t"]}. ' + (i.get("d") or i["r"]).replace("\n", " ")[:700] for i in itens[:N_NOTICIAS]]
         rapidas = [f'- [{i["s"]}] {i["t"]}. {i["r"][:200]}' for i in itens[N_NOTICIAS:N_NOTICIAS + N_RAPIDAS]]
         outras = [f'- {o["t"]} ({o["f"]})' for o in dados.get("outras", [])[:N_OUTRAS]]
@@ -62,7 +69,18 @@ def carregar():
 
 
 def roteiro(b, i, n):
-    if b["rapido"]:
+    if b.get("debate"):
+        pedido = ("Write the 'hot debate' segment of a two-host news podcast, in English, at least 600 words. "
+                  "Hosts: Alex and Sam. This continues an episode already in progress: do NOT greet and do NOT introduce the show; "
+                  "start with one short line saying the hosts will now pick a side and argue it, for the sake of debate. "
+                  "For EACH story in STORIES, Alex DEFENDS it (argues the strongest case in favor of the decision, actor or development) "
+                  "and Sam ATTACKS it (argues the strongest case against or the biggest risks). They interrupt each other, push back, "
+                  "use sharp rhetorical questions and a hot, energetic tone, but stay respectful: no personal insults, no slurs. "
+                  "Base every argument ONLY on facts in the text; never invent numbers, quotes or events; opinions must be framed as arguments ('the case for...', 'critics say...'). "
+                  "Before moving to the next story, each host gives one closing line. "
+                  + ("End with a short sign-off from both hosts. " if i == n - 1 else "Do NOT sign off; the episode continues after this part. ") +
+                  "Format STRICTLY as lines starting with 'Alex:' or 'Sam:' and nothing else.\n\nSTORIES:\n" + "\n".join(b["itens"]))
+    elif b["rapido"]:
         pedido = ("Write the final 'lightning round' segment of a casual two-host news podcast, in English, at least 450 words. "
                   "Hosts: Alex and Sam. This segment continues an episode already in progress: do NOT greet and do NOT introduce the show; "
                   "start with a short natural transition. Cover EVERY story in STORIES in one or two short sentences each, grouped by topic, "
@@ -155,6 +173,8 @@ def main():
         sys.exit("Poucas notícias; podcast ignorado.")
     tam = -(-len(principais) // N_BLOCOS)
     blocos = [{"itens": principais[k:k + tam], "outras": [], "rapido": False} for k in range(0, len(principais), tam)]
+    if DEBATE:
+        blocos.append({"itens": DEBATE, "outras": [], "rapido": False, "debate": True})
     if rapidas or outras:
         blocos.append({"itens": rapidas, "outras": outras, "rapido": True})
     roteiros, pcm, silencio = [], b"", b"\x00" * int(24000 * 2 * 0.7)
